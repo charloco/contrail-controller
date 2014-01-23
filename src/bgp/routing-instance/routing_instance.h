@@ -119,6 +119,7 @@ private:
     void Shutdown();
 
     BgpTable *InetVpnTableCreate(BgpServer *server);
+    BgpTable *ErmVpnTableCreate(BgpServer *server);
     BgpTable *EvpnTableCreate(BgpServer *server);
 
     std::string name_;

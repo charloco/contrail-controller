@@ -421,7 +421,7 @@ TEST_F(BgpXmppUnitTest, Connection) {
     sandesh_context.bgp_server = a_.get();
     sandesh_context.xmpp_peer_manager = bgp_channel_manager_;
     Sandesh::set_client_context(&sandesh_context);
-    std::vector<size_t> result = list_of(3)(3)(3); // inet, inetmcast, enet
+    std::vector<size_t> result = list_of(3)(3)(3); // inet, ermvpn, enet
     Sandesh::set_response_callback(boost::bind(ValidateRoutingInstanceResponse,
                                    _1, result));
     ShowRoutingInstanceReq *req = new ShowRoutingInstanceReq;
@@ -430,7 +430,7 @@ TEST_F(BgpXmppUnitTest, Connection) {
     req->Release();
     WAIT_EQ(1, validate_done_);
 
-    result = list_of(1)(7); // inet, inetmcast, enet
+    result = list_of(1)(7); // inet, ermvpn, enet
     Sandesh::set_response_callback(boost::bind(ValidateNeighborResponse,
                                    _1, result));
     BgpNeighborReq *nbr_req = new BgpNeighborReq;

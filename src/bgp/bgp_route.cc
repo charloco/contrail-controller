@@ -169,6 +169,13 @@ bool BgpRoute::RemovePath(const IPeer *peer) {
 }
 
 //
+// Check if the route is valid.
+//
+bool BgpRoute::IsValid() const {
+    return (!IsDeleted() && BestPath());
+}
+
+//
 // Check if there's a better path with the same forwarding information.
 // The forwarding information we look at is the label and the next hop.
 // Return true if we find such a path, false otherwise.

@@ -110,15 +110,18 @@ static const char *config_control_node= "\
         <port>%d</port>\
         <address-families>\
             <family>inet-vpn</family>\
+            <family>erm-vpn</family>\
         </address-families>\
         <session to=\'CN2\'>\
             <address-families>\
                 <family>inet-vpn</family>\
+                <family>erm-vpn</family>\
             </address-families>\
         </session>\
         <session to=\'MX\'>\
             <address-families>\
                 <family>inet-vpn</family>\
+                <family>erm-vpn</family>\
             </address-families>\
         </session>\
     </bgp-router>\
@@ -128,10 +131,12 @@ static const char *config_control_node= "\
         <port>%d</port>\
         <address-families>\
             <family>inet-vpn</family>\
+            <family>erm-vpn</family>\
         </address-families>\
         <session to=\'MX\'>\
             <address-families>\
                 <family>inet-vpn</family>\
+                <family>erm-vpn</family>\
             </address-families>\
         </session>\
     </bgp-router>\
@@ -141,6 +146,7 @@ static const char *config_control_node= "\
         <port>%d</port>\
         <address-families>\
             <family>inet-vpn</family>\
+            <family>erm-vpn</family>\
         </address-families>\
     </bgp-router>\
     </routing-instance>\

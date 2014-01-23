@@ -218,7 +218,10 @@ const char *MiniSystemTest::config_tmpl = "\
         <address>127.0.0.1</address>\
         <port>%d</port>\
         <session to=\'B\'>\
-            <address-families><family>inet-vpn</family></address-families>\
+            <address-families>\
+            <family>inet-vpn</family>\
+            <family>erm-vpn</family>\
+            </address-families>\
         </session>\
     </bgp-router>\
     <bgp-router name=\'B\'>\
@@ -226,7 +229,10 @@ const char *MiniSystemTest::config_tmpl = "\
         <address>127.0.0.1</address>\
         <port>%d</port>\
         <session to=\'A\'>\
-            <address-families><family>inet-vpn</family></address-families>\
+            <address-families>\
+            <family>inet-vpn</family>\
+            <family>erm-vpn</family>\
+            </address-families>\
         </session>\
     </bgp-router>\
 </config>\

@@ -11,8 +11,8 @@
 #include "base/test/task_test_util.h"
 #include "bgp/bgp_attr.h"
 #include "bgp/ipeer.h"
-#include "bgp/inetmcast/inetmcast_route.h"
-#include "bgp/inetmcast/inetmcast_table.h"
+#include "bgp/ermvpn/ermvpn_route.h"
+#include "bgp/ermvpn/ermvpn_table.h"
 #include "bgp/test/bgp_server_test_util.h"
 #include "control-node/control_node.h"
 #include "db/db.h"
@@ -40,7 +40,7 @@ public:
     }
     virtual ~XmppPeerMock() { }
 
-    void AddRoute(InetMcastTable *table, string group_str, string source_str) {
+    void AddRoute(ErmVpnTable *table, string group_str, string source_str) {
         boost::system::error_code ec;
         RouteDistinguisher rd(address_.to_ulong(), 65535);
         Ip4Address group = Ip4Address::from_string(group_str.c_str(), ec);
@@ -48,17 +48,17 @@ public:
 
         DBRequest req;
         req.oper = DBRequest::DB_ENTRY_ADD_CHANGE;
-        InetMcastPrefix prefix(rd, group, source);
-        req.key.reset(new InetMcastTable::RequestKey(prefix, this));
-        req.data.reset(new InetMcastTable::RequestData(attr, 0, 0));
+        ErmVpnPrefix prefix(ErmVpnPrefix::NativeRoute, rd, group, source);
+        req.key.reset(new ErmVpnTable::RequestKey(prefix, this));
+        req.data.reset(new ErmVpnTable::RequestData(attr, 0, 0));
         table->Enqueue(&req);
     }
 
-    void AddRoute(InetMcastTable *table, string group_str) {
+    void AddRoute(ErmVpnTable *table, string group_str) {
         AddRoute(table, group_str, "0.0.0.0");
     }
 
-    void DelRoute(InetMcastTable *table, string group_str, string source_str) {
+    void DelRoute(ErmVpnTable *table, string group_str, string source_str) {
         boost::system::error_code ec;
         RouteDistinguisher rd(address_.to_ulong(), 65535);
         Ip4Address group = Ip4Address::from_string(group_str.c_str(), ec);
@@ -66,12 +66,12 @@ public:
 
         DBRequest req;
         req.oper = DBRequest::DB_ENTRY_DELETE;
-        InetMcastPrefix prefix(rd, group, source);
-        req.key.reset(new InetMcastTable::RequestKey(prefix, this));
+        ErmVpnPrefix prefix(ErmVpnPrefix::NativeRoute, rd, group, source);
+        req.key.reset(new ErmVpnTable::RequestKey(prefix, this));
         table->Enqueue(&req);
     }
 
-    void DelRoute(InetMcastTable *table, string group_str) {
+    void DelRoute(ErmVpnTable *table, string group_str) {
         DelRoute(table, group_str, "0.0.0.0");
     }
 
@@ -128,16 +128,16 @@ protected:
         scheduler->Start();
         task_util::WaitForIdle();
 
-        red_table_ = static_cast<InetMcastTable *>(
-            server_.database()->FindTable("red.inetmcast.0"));
+        red_table_ = static_cast<ErmVpnTable *>(
+            server_.database()->FindTable("red.ermvpn.0"));
         red_tm_ = red_table_->tree_manager_;
         TASK_UTIL_EXPECT_EQ(red_table_, red_tm_->table_);
         TASK_UTIL_EXPECT_EQ(DB::PartitionCount(),
                             (int)red_tm_->partitions_.size());
         TASK_UTIL_EXPECT_NE(-1, red_tm_->listener_id_);
 
-        green_table_ = static_cast<InetMcastTable *>(
-            server_.database()->FindTable("green.inetmcast.0"));
+        green_table_ = static_cast<ErmVpnTable *>(
+            server_.database()->FindTable("green.ermvpn.0"));
         green_tm_ = green_table_->tree_manager_;
         TASK_UTIL_EXPECT_EQ(green_table_, green_tm_->table_);
         TASK_UTIL_EXPECT_EQ(DB::PartitionCount(),
@@ -163,7 +163,7 @@ protected:
         }
     }
 
-    void AddRoutePeers(InetMcastTable *table,
+    void AddRoutePeers(ErmVpnTable *table,
             string group_str, string source_str, bool even, bool odd) {
         for (vector<XmppPeerMock *>::iterator it = peers_.begin();
              it != peers_.end(); ++it) {
@@ -174,34 +174,34 @@ protected:
         }
     }
 
-    void AddRouteAllPeers(InetMcastTable *table,
+    void AddRouteAllPeers(ErmVpnTable *table,
             string group_str, string source_str) {
         AddRoutePeers(table, group_str, source_str, true, true);
     }
 
-    void AddRouteAllPeers(InetMcastTable *table, string group_str) {
+    void AddRouteAllPeers(ErmVpnTable *table, string group_str) {
         AddRouteAllPeers(table, group_str, "0.0.0.0");
     }
 
-    void AddRouteEvenPeers(InetMcastTable *table,
+    void AddRouteEvenPeers(ErmVpnTable *table,
             string group_str, string source_str) {
         AddRoutePeers(table, group_str, source_str, true, false);
     }
 
-    void AddRouteEvenPeers(InetMcastTable *table, string group_str) {
+    void AddRouteEvenPeers(ErmVpnTable *table, string group_str) {
         AddRouteEvenPeers(table, group_str, "0.0.0.0");
     }
 
-    void AddRouteOddPeers(InetMcastTable *table,
+    void AddRouteOddPeers(ErmVpnTable *table,
             string group_str, string source_str) {
         AddRoutePeers(table, group_str, source_str, false, true);
     }
 
-    void AddRouteOddPeers(InetMcastTable *table, string group_str) {
+    void AddRouteOddPeers(ErmVpnTable *table, string group_str) {
         AddRouteOddPeers(table, group_str, "0.0.0.0");
     }
 
-    void DelRoutePeers(InetMcastTable *table,
+    void DelRoutePeers(ErmVpnTable *table,
             string group_str, string source_str, bool even, bool odd) {
         for (vector<XmppPeerMock *>::iterator it = peers_.begin();
              it != peers_.end(); ++it) {
@@ -212,34 +212,34 @@ protected:
         }
     }
 
-    void DelRouteAllPeers(InetMcastTable *table,
+    void DelRouteAllPeers(ErmVpnTable *table,
             string group_str, string source_str) {
         DelRoutePeers(table, group_str, source_str, true, true);
     }
 
-    void DelRouteAllPeers(InetMcastTable *table, string group_str) {
+    void DelRouteAllPeers(ErmVpnTable *table, string group_str) {
         DelRouteAllPeers(table, group_str, "0.0.0.0");
     }
 
-    void DelRouteEvenPeers(InetMcastTable *table,
+    void DelRouteEvenPeers(ErmVpnTable *table,
             string group_str, string source_str) {
         DelRoutePeers(table, group_str, source_str, true, false);
     }
 
-    void DelRouteEvenPeers(InetMcastTable *table, string group_str) {
+    void DelRouteEvenPeers(ErmVpnTable *table, string group_str) {
         DelRouteEvenPeers(table, group_str, "0.0.0.0");
     }
 
-    void DelRouteOddPeers(InetMcastTable *table,
+    void DelRouteOddPeers(ErmVpnTable *table,
             string group_str, string source_str) {
         DelRoutePeers(table, group_str, source_str, false, true);
     }
 
-    void DelRouteOddPeers(InetMcastTable *table, string group_str) {
+    void DelRouteOddPeers(ErmVpnTable *table, string group_str) {
         DelRouteOddPeers(table, group_str, "0.0.0.0");
     }
 
-    void VerifyRouteCount(InetMcastTable *table, size_t count) {
+    void VerifyRouteCount(ErmVpnTable *table, size_t count) {
         TASK_UTIL_EXPECT_EQ(count, table->Size());
     }
 
@@ -253,7 +253,7 @@ protected:
         TASK_UTIL_EXPECT_EQ(count, total);
     }
 
-    void VerifyForwarderProperties(InetMcastTable *table,
+    void VerifyForwarderProperties(ErmVpnTable *table,
             McastForwarder *forwarder) {
         ConcurrencyScope scope("db::DBTable");
 
@@ -272,7 +272,7 @@ protected:
         EXPECT_LE(olist->elements.size(), McastTreeManager::kDegree + 1);
     }
 
-    void VerifyOnlyForwarderProperties(InetMcastTable *table,
+    void VerifyOnlyForwarderProperties(ErmVpnTable *table,
             McastForwarder *forwarder) {
         ConcurrencyScope scope("db::DBTable");
 
@@ -301,20 +301,20 @@ protected:
 
         BGP_DEBUG_UT("Table " << tm->table_->name());
         for (McastTreeManager::PartitionList::iterator it =
-                tm->partitions_.begin();
-                it != tm->partitions_.end(); ++it) {
+             tm->partitions_.begin(); it != tm->partitions_.end(); ++it) {
             McastSGEntry *sg_entry = (*it)->FindSGEntry(group, source);
             if (sg_entry) {
-                TASK_UTIL_EXPECT_EQ(count, sg_entry->forwarders_.size());
-                if (sg_entry->forwarders_.size() > 1) {
+                McastSGEntry::ForwarderSet *forwarders =
+                    sg_entry->forwarder_sets_[McastTreeManager::LevelNative];
+                TASK_UTIL_EXPECT_EQ(count, forwarders->size());
+                if (forwarders->size() > 1) {
 
                     BGP_DEBUG_UT("  McastSGEntry " << sg_entry->ToString() <<
                                  "  partition " << (*it)->part_id_);
                 }
                 for (McastSGEntry::ForwarderSet::iterator it =
-                     sg_entry->forwarders_.begin();
-                     it != sg_entry->forwarders_.end(); ++it) {
-                    if (sg_entry->forwarders_.size() > 1) {
+                     forwarders->begin(); it != forwarders->end(); ++it) {
+                    if (forwarders->size() > 1) {
                         VerifyForwarderProperties(tm->table_, *it);
                         VerifyForwarderLinks(*it);
                     } else {
@@ -324,7 +324,7 @@ protected:
                 return;
             }
         }
-        TASK_UTIL_EXPECT_TRUE(count == 0);
+        TASK_UTIL_EXPECT_EQ(0, count);
     }
 
     void VerifyForwarderCount(McastTreeManager *tm,
@@ -343,8 +343,8 @@ protected:
 
     EventManager evm_;
     BgpServer server_;
-    InetMcastTable *red_table_;
-    InetMcastTable *green_table_;
+    ErmVpnTable *red_table_;
+    ErmVpnTable *green_table_;
     McastTreeManager *red_tm_;
     McastTreeManager *green_tm_;
     scoped_ptr<BgpInstanceConfig> master_cfg_;

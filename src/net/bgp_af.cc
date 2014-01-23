@@ -13,7 +13,7 @@ std::string BgpAf::ToString(uint8_t afi, uint16_t safi) {
             out << "IPv4:";
             break;
         case IPv6:
-            out << "IPv4:";
+            out << "IPv6:";
             break;
         case L2Vpn:
             out << "L2Vpn:";
@@ -23,11 +23,8 @@ std::string BgpAf::ToString(uint8_t afi, uint16_t safi) {
             break;
     }
     switch (safi) {
-        case IPv4:
+        case Unicast:
             out << "Unicast";
-            break;
-        case McastVpn:
-            out << "McastVpn";
             break;
         case EVpn:
             out << "EVpn";
@@ -37,6 +34,9 @@ std::string BgpAf::ToString(uint8_t afi, uint16_t safi) {
             break;
         case Enet:
             out << "Enet";
+            break;
+        case ErmVpn:
+            out << "ErmVpn";
             break;
         default:
             out << "unknown";
@@ -52,6 +52,8 @@ Address::Family BgpAf::AfiSafiToFamily(uint8_t afi, uint8_t safi) {
         return Address::INETVPN;
     if (afi == BgpAf::L2Vpn && safi == BgpAf::EVpn)
         return Address::EVPN;
+    if (afi == BgpAf::IPv4 && safi == BgpAf::ErmVpn)
+        return Address::ERMVPN;
 
     return Address::UNSPEC;
 }
