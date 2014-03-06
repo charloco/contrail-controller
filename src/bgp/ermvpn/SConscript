@@ -12,4 +12,6 @@ env.Append(CPPPATH = env['TOP'])
 libbgp_ermvpn = env.Library('bgp_ermvpn',
                             ['ermvpn_route.cc', 'ermvpn_table.cc'])
 
-env.SConscript('test/SConscript', exports='BuildEnv', duplicate = 0)
+ermvpn_unit_tests = env.SConscript('test/SConscript', exports='BuildEnv',
+                                   duplicate = 0)
+Return('ermvpn_unit_tests')
