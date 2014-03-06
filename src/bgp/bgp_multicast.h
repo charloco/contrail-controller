@@ -93,8 +93,8 @@ public:
     void AllocateLabel();
     void ReleaseLabel();
 
-    void AddTreeRoute();
-    void DeleteTreeRoute();
+    void AddGlobalTreeRoute();
+    void DeleteGlobalTreeRoute();
     UpdateInfo *GetUpdateInfo(ErmVpnTable *table);
 
     uint8_t level() const { return level_; }
