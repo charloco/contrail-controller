@@ -41,15 +41,26 @@ private:
 };
 
 //
-// Constructor for McastForwarder. We get the address of the forwarder from
-// the nexthop. The LabelBlockPtr from the ErmVpnRoute is copied for convenience.
+// Constructor for McastForwarder.  The level is determined by the route type.
+// We get the address of the forwarder and the label_block from the attributes
+// of the active path.  The LabelBLockPtr needs to be copied so that we can
+// release the label when processing a delete notification - we won't have the
+// path at that point.
+//
+// The RD will be null for BGP learnt routes and the RouterId will be null for
+// XMPP learnt routes.
 //
 McastForwarder::McastForwarder(McastSGEntry *sg_entry, ErmVpnRoute *route)
-    : sg_entry_(sg_entry), route_(route), global_tree_route_(NULL),
-      label_(0), address_(0), rd_(route->GetPrefix().route_distinguisher()),
+    : sg_entry_(sg_entry),
+      route_(route),
+      global_tree_route_(NULL),
+      label_(0),
+      address_(0),
+      rd_(route->GetPrefix().route_distinguisher()),
       router_id_(route->GetPrefix().router_id()) {
     const BgpPath *path = route->BestPath();
     const BgpAttr *attr = path->GetAttr();
+
     if (route_->GetPrefix().type() == ErmVpnPrefix::NativeRoute) {
         level_ = McastTreeManager::LevelNative;
         address_ = attr->nexthop().to_v4();
@@ -66,10 +77,11 @@ McastForwarder::McastForwarder(McastSGEntry *sg_entry, ErmVpnRoute *route)
 }
 
 //
-// Destructor for McastForwarder. FLushes forward and reverse links to and
+// Destructor for McastForwarder. Flushes forward and reverse links to and
 // from other McastForwarders.
 //
 McastForwarder::~McastForwarder() {
+    DeleteGlobalTreeRoute();
     FlushLinks();
     ReleaseLabel();
 }
@@ -107,7 +119,11 @@ bool McastForwarder::Update(ErmVpnRoute *route) {
 // Printable string for McastForwarder.
 //
 std::string McastForwarder::ToString() const {
-    return rd_.ToString() + " -> " + integerToString(label_);
+    if (level_ == McastTreeManager::LevelNative) {
+        return rd_.ToString() + " -> " + integerToString(label_);
+    } else {
+        return router_id_.to_string() + " -> " + integerToString(label_);
+    }
 }
 
 //
@@ -175,14 +191,24 @@ void McastForwarder::ReleaseLabel() {
     }
 }
 
+//
+// Add the GlobalTreeRoute for this McastForwarder. The GlobalTreeRoute is
+// used by the tree builder to tell the associated control-node about the
+// forwarding edges for Native McastForwarders attached it.
+//
 void McastForwarder::AddGlobalTreeRoute() {
+    assert(level_ == McastTreeManager::LevelLocal);
     assert(!global_tree_route_);
 
+    // Bail if there's no distribution tree.
     if (label_ == 0 || tree_links_.empty())
         return;
+
+    // Bail if we can't build a source RD.
     if (sg_entry_->GetSourceRd() == RouteDistinguisher::null_rd)
         return;
 
+    // Construct the prefix and route key.
     BgpTable *table = static_cast<BgpTable *>(route_->get_table());
     BgpServer *server = table->routing_instance()->server();
     ErmVpnPrefix prefix(ErmVpnPrefix::GlobalTreeRoute,
@@ -190,6 +216,7 @@ void McastForwarder::AddGlobalTreeRoute() {
         sg_entry_->group(), sg_entry_->source());
     ErmVpnRoute rt_key(prefix);
 
+    // Find or create the route.
     McastManagerPartition *partition = sg_entry_->partition();
     DBTablePartition *tbl_partition =
         static_cast<DBTablePartition *>(partition->GetTablePartition());
@@ -202,6 +229,8 @@ void McastForwarder::AddGlobalTreeRoute() {
         route->ClearDelete();
     }
 
+    // Build the attributes.  Need to go through the tree links to build the
+    // EdgeForwardingSpec.
     BgpAttrSpec attr_spec;
     BgpAttrNextHop nexthop(server->bgp_identifier());
     attr_spec.push_back(&nexthop);
@@ -220,12 +249,16 @@ void McastForwarder::AddGlobalTreeRoute() {
     attr_spec.push_back(&efspec);
     BgpAttrPtr attr = server->attr_db()->Locate(attr_spec);
 
+    // Add a path with source BgpPath::Local.
     BgpPath *path = new BgpPath(0, BgpPath::Local, attr);
     route->InsertPath(path);
     tbl_partition->Notify(route);
     global_tree_route_ = route;
 }
 
+//
+// Delete the GlobalTreeRoute for this McastForwarder.
+//
 void McastForwarder::DeleteGlobalTreeRoute() {
     if (!global_tree_route_)
         return;
@@ -243,7 +276,13 @@ void McastForwarder::DeleteGlobalTreeRoute() {
     global_tree_route_ = NULL;
 }
 
+//
+// Append list of BgpOListElems from the Local tree to the BgpOListPtr. The
+// list is built based on the tree links in this McastForwarder.
+//
 void McastForwarder::AddLocalOListElems(BgpOListPtr olist) {
+    assert(level_ == McastTreeManager::LevelNative);
+
     for (McastForwarderList::const_iterator it = tree_links_.begin();
          it != tree_links_.end(); ++it) {
         BgpOListElem elem((*it)->address(), (*it)->label(), (*it)->encap());
@@ -251,11 +290,18 @@ void McastForwarder::AddLocalOListElems(BgpOListPtr olist) {
     }
 }
 
+//
+// Append list of BgpOListElems from the Global tree to the BgpOListPtr. The
+// list is built based on EdgeForwarding attribute in the GlobalTreeRoute.
+//
 void McastForwarder::AddGlobalOListElems(BgpOListPtr olist) {
+    assert(level_ == McastTreeManager::LevelNative);
+
+    // Bail if this is not the forest node for the Local tree.
     if (!sg_entry_->IsForestNode(this))
         return;
 
-    const ErmVpnRoute *route = sg_entry_->global_tree_route();
+    const ErmVpnRoute *route = sg_entry_->tree_result_route();
     if (!route)
         return;
 
@@ -263,6 +309,7 @@ void McastForwarder::AddGlobalOListElems(BgpOListPtr olist) {
     if (!path)
         return;
 
+    // Go through each forwarding edge and add it to the list.
     const EdgeForwarding *eforwarding = path->GetAttr()->edge_forwarding();
     for (EdgeForwarding::EdgeList::const_iterator it =
          eforwarding->edge_list.begin(); it != eforwarding->edge_list.end();
@@ -277,21 +324,24 @@ void McastForwarder::AddGlobalOListElems(BgpOListPtr olist) {
 
 //
 // Construct an UpdateInfo with the RibOutAttr that needs to be advertised to
-// the IPeer for the ErmVpnRoute associated with this McastForwarder. This
-// is used the Export method of the ErmVpnTable.  The target RibPeerSet is
-// in the UpdateInfo is assumed to be filled in by the caller.
+// the IPeer for the ErmVpnRoute associated with this McastForwarder. This is
+// used the Export method of the ErmVpnTable.  It is expected that the caller
+// fills in the target RibPeerSet in the UpdateInfo.
 //
 // The main functionality here is to transform the McastForwarderList for the
-// distribution tree into a BgpOList.
+// distribution tree and the EdgeForwarding attribute from the GlobalTreeRoute
+// into a BgpOList.
 //
 UpdateInfo *McastForwarder::GetUpdateInfo(ErmVpnTable *table) {
     CHECK_CONCURRENCY("db::DBTable");
+
+    assert(level_ == McastTreeManager::LevelNative);
 
     BgpOListPtr olist(new BgpOList);
     AddLocalOListElems(olist);
     AddGlobalOListElems(olist);
 
-    // Bail if the tree has not been built or there are no links.
+    // Bail if we've never built the tree or if the BgpOList is empty.
     if (label_ == 0 || olist->elements.empty())
         return NULL;
 
@@ -315,7 +365,7 @@ McastSGEntry::McastSGEntry(McastManagerPartition *partition,
       source_(source),
       forest_node_(NULL),
       local_tree_route_(NULL),
-      global_tree_route_(NULL),
+      tree_result_route_(NULL),
       on_work_queue_(false) {
     for (int level = McastTreeManager::LevelFirst;
          level < McastTreeManager::LevelCount; ++level) {
@@ -350,6 +400,13 @@ void McastSGEntry::AddForwarder(McastForwarder *forwarder) {
     partition_->EnqueueSGEntry(this);
 }
 
+//
+// Handle change for the given McastForwarder under this McastSGEntry. Trigger
+// update of the distribution tree.
+//
+// Note that this method only handles the change = the caller determines that
+// there has been a change.
+//
 void McastSGEntry::ChangeForwarder(McastForwarder *forwarder) {
     uint8_t level = forwarder->level();
     update_needed_[level] = true;
@@ -363,35 +420,50 @@ void McastSGEntry::ChangeForwarder(McastForwarder *forwarder) {
 void McastSGEntry::DeleteForwarder(McastForwarder *forwarder) {
     if (forwarder == forest_node_)
         forest_node_ = NULL;
-    forwarder->DeleteGlobalTreeRoute();
     uint8_t level = forwarder->level();
     forwarder_sets_[level]->erase(forwarder);
     update_needed_[level] = true;
     partition_->EnqueueSGEntry(this);
 }
 
+//
+// Get the SourceRD to be used when adding [Local|Global]TreeRoutes.  This
+// SourceRD gets used as the RD when the ErmVpnRoute is replicated from the
+// VRF table to the VPN table.
+//
+// We simply use the RD for the forest node.
+//
 RouteDistinguisher McastSGEntry::GetSourceRd() {
     if (!forest_node_)
         return RouteDistinguisher::null_rd;
     return forest_node_->route()->GetPrefix().route_distinguisher();
 }
 
+//
+// Add the LocalTreeRoute for this McastSGEntry.  This route advertises a set
+// of candidate edges from McastForwarders attached to this control-node that
+// can be used by the tree builder to build the higher level tree.  We simply
+// advertise edges McastTreeManager::kDegree - 1 edges from the forest node.
+//
 void McastSGEntry::AddLocalTreeRoute() {
     assert(!forest_node_);
     assert(!local_tree_route_);
 
+    // Select the last leaf in the distribution tree as the forest node.
     uint8_t level = McastTreeManager::LevelNative;
     ForwarderSet *forwarders = forwarder_sets_[level];
     if (forwarders->rbegin() == forwarders->rend())
         return;
-
     forest_node_ = *forwarders->rbegin();
+
+    // Construct the prefix and route key.
     BgpServer *server = partition_->server();
     Ip4Address router_id(server->bgp_identifier());
     ErmVpnPrefix prefix(ErmVpnPrefix::LocalTreeRoute,
         RouteDistinguisher::null_rd, router_id, group_, source_);
-
     ErmVpnRoute rt_key(prefix);
+
+    // Find or create the route.
     DBTablePartition *tbl_partition =
         static_cast<DBTablePartition *>(partition_->GetTablePartition());
     ErmVpnRoute *route =
@@ -403,6 +475,7 @@ void McastSGEntry::AddLocalTreeRoute() {
         route->ClearDelete();
     }
 
+    // Build the attributes.
     BgpAttrSpec attr_spec;
     BgpAttrNextHop nexthop(server->bgp_identifier());
     attr_spec.push_back(&nexthop);
@@ -418,12 +491,16 @@ void McastSGEntry::AddLocalTreeRoute() {
     attr_spec.push_back(&edspec);
     BgpAttrPtr attr = server->attr_db()->Locate(attr_spec);
 
+    // Add a path with source BgpPath::Local.
     BgpPath *path = new BgpPath(0, BgpPath::Local, attr);
     route->InsertPath(path);
     tbl_partition->Notify(route);
     local_tree_route_ = route;
 }
 
+//
+// Delete the LocalTreeRoute for this McastSGEntry.
+//
 void McastSGEntry::DeleteLocalTreeRoute() {
     if (!local_tree_route_)
         return;
@@ -440,14 +517,14 @@ void McastSGEntry::DeleteLocalTreeRoute() {
     local_tree_route_ = NULL;
 }
 
-void McastSGEntry::UpdateLocalTreeRoute() {
-    DeleteLocalTreeRoute();
-    AddLocalTreeRoute();
-}
 
+//
+// Update relevant [Local|Global]TreeRoutes for the McastSGEntry.
+//
 void McastSGEntry::UpdateRoutes(uint8_t level) {
     if (level == McastTreeManager::LevelNative) {
-        UpdateLocalTreeRoute();
+        DeleteLocalTreeRoute();
+        AddLocalTreeRoute();
     } else {
         ForwarderSet *forwarders = forwarder_sets_[level];
         for (ForwarderSet::iterator it = forwarders->begin();
@@ -458,6 +535,9 @@ void McastSGEntry::UpdateRoutes(uint8_t level) {
     }
 }
 
+//
+// Implement tree builder election.
+//
 bool McastSGEntry::IsTreeBuilder(uint8_t level) {
     if (level == McastTreeManager::LevelNative)
         return true;
@@ -476,7 +556,7 @@ bool McastSGEntry::IsTreeBuilder(uint8_t level) {
 
 //
 //
-// Update the distribution tree for this McastSGEntry.  We traverse all the
+// Update specified distribution tree for the McastSGEntry.  We traverse all
 // McastForwarders in sorted order and arrange them in breadth first fashion
 // in a k-ary tree.  Building the tree in this manner guarantees that we get
 // the same tree for a given set of forwarders, independent of the order in
@@ -499,8 +579,8 @@ void McastSGEntry::UpdateTree(uint8_t level) {
     }
 
     // First get rid of the previous distribution tree and enqueue all the
-    // associated ErmVpnRoutes for notification.  Note that DBListeners
-    // will not get invoked until after this routine is done.
+    // associated ErmVpnRoutes for notification. Note that DBListeners will
+    // not get invoked until after this routine is done.
     ForwarderSet *forwarders = forwarder_sets_[level];
     for (ForwarderSet::iterator it = forwarders->begin();
          it != forwarders->end(); ++it) {
@@ -509,13 +589,14 @@ void McastSGEntry::UpdateTree(uint8_t level) {
        partition_->GetTablePartition()->Notify((*it)->route());
     }
 
+    // Bail if we're not the tree builder.
     if (!IsTreeBuilder(level)) {
         UpdateRoutes(level);
         return;
     }
 
-    // Create a vector of pointers to the McastForwarders in sorted order. We
-    // resort to this because std::set doesn't support random access iterators.
+    // Create a vector of pointers to the McastForwarders in sorted order.
+    // We do this because std::set doesn't support random access iterators.
     McastForwarderList vec;
     vec.reserve(forwarders->size());
     for (ForwarderSet::iterator it = forwarders->begin();
@@ -539,9 +620,13 @@ void McastSGEntry::UpdateTree(uint8_t level) {
         (*parent_it)->AddLink(*it);
     }
 
+    // Update [Local|Global]TreeRoutes.
     UpdateRoutes(level);
 }
 
+//
+// Update distribution trees for both levels.
+//
 void McastSGEntry::UpdateTree() {
     for (uint8_t level = McastTreeManager::LevelFirst;
          level < McastTreeManager::LevelCount; ++level) {
@@ -549,6 +634,11 @@ void McastSGEntry::UpdateTree() {
     }
 }
 
+//
+// Trigger notification of the ErmVpnRoute associated with the McastForwarder
+// that is the forest node. This is used to trigger a rebuild of the BgpOlist
+// when the GlobalTreeRoute is updated.
+//
 void McastSGEntry::NotifyForestNode() {
     if (!forest_node_)
         return;
@@ -560,7 +650,7 @@ bool McastSGEntry::IsForestNode(McastForwarder *forwarder) {
 }
 
 bool McastSGEntry::empty() const {
-    if (local_tree_route_ || global_tree_route_)
+    if (local_tree_route_ || tree_result_route_)
         return false;
     if (!forwarder_sets_[McastTreeManager::LevelNative]->empty())
         return false;
@@ -783,10 +873,14 @@ void McastTreeManager::TreeNodeListener(McastManagerPartition *partition,
     }
 }
 
+//
+// DBListener callback handler for  GlobalTreeRoutes in the ErmVpnTable.
+//
 void McastTreeManager::TreeResultListener(McastManagerPartition *partition,
         ErmVpnRoute *route) {
     CHECK_CONCURRENCY("db::DBTable");
 
+    // Ignore the GlobalTreeRoute if it's not applicable to this control-node.
     BgpServer *server = table_->routing_instance()->server();
     if (route->GetPrefix().router_id().to_ulong() != server->bgp_identifier())
         return;
@@ -802,7 +896,7 @@ void McastTreeManager::TreeResultListener(McastManagerPartition *partition,
         McastSGEntry *sg_entry = partition->LocateSGEntry(
             route->GetPrefix().group(), route->GetPrefix().source());
         route->SetState(table_, listener_id_, sg_entry);
-        sg_entry->set_global_tree_route(route);
+        sg_entry->set_tree_result_route(route);
         sg_entry->NotifyForestNode();
 
     } else {
@@ -811,7 +905,7 @@ void McastTreeManager::TreeResultListener(McastManagerPartition *partition,
         assert(sg_entry);
 
         if (!route->IsValid()) {
-            sg_entry->clear_global_tree_route();
+            sg_entry->clear_tree_result_route();
             route->ClearState(table_, listener_id_);
             partition->EnqueueSGEntry(sg_entry);
         }
@@ -819,6 +913,11 @@ void McastTreeManager::TreeResultListener(McastManagerPartition *partition,
     }
 }
 
+//
+// DBListener callback handler for the ErmVpnTable. GlobalTreeRoutes provide
+// result information and hence are handled differently than Native and Local
+// routes, which result in update of a McastForwarder.
+//
 void McastTreeManager::RouteListener(
         DBTablePartBase *tpart, DBEntryBase *db_entry) {
     CHECK_CONCURRENCY("db::DBTable");

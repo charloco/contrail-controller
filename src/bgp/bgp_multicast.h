@@ -31,13 +31,13 @@ struct UpdateInfo;
 typedef std::vector<McastForwarder *> McastForwarderList;
 
 //
-// This class represents membership of a vRouter or a control node in a (G,S)
+// This class represents membership of a vRouter or a control-node in a (G,S)
 // within a multicast table.
 //
 // A vRouter is considered a member if it has advertised a route for (G,S) via
 // XMPP. The level_ field in McastForwarder is set to LevelNative in this case.
 //
-// A control node is considered to be a member if it has advertised (via BGP)
+// A control-node is considered to be a member if it has advertised (via BGP)
 // an ErmVpnRoute of type LocalRoute for (G,S). The level_ field gets set to
 // LevelLocal in this case.
 
@@ -70,11 +70,12 @@ typedef std::vector<McastForwarder *> McastForwarderList;
 // distribution tree. Thus the label can be stored in the McastForwarder itself
 // and does not need to be part of the link information.
 //
-// If this control node is elected as the tree builder for the (G,S), a global
+// If this control-node is elected as the tree builder for the (G,S), a global
 // distribution tree of all Local McastForwarders is built.  Relevant edges of
-// this global distribution tree are advertised to each control node by adding
+// this global distribution tree are advertised to each control-node by adding
 // a GlobalTreeRoute for each Local McastForwarder. The global_tree_route_ is
-// used to keep track of this ErmVpnRoute.
+// used to keep track of this ErmVpnRoute and [Add|Delete]GlobalTreeRoute are
+// used to add or delete the route.
 //
 class McastForwarder : public DBState {
 public:
@@ -169,7 +170,7 @@ struct McastForwarderCompare {
 // Two sets of pointers to McastForwarders are maintained in a McastSGEntry -
 // for Native and Local tree levels. The McastForwarders at the Native level
 // correspond to vRouters that have subscribed to the (G,S). McastForwarders
-// at the Local level correspond to control nodes (including this one) that
+// at the Local level correspond to control-nodes (including this one) that
 // are advertising their local subtree's candidate edges via a LocalTreeRoute.
 // The sets are keyed by the RD and RouterId of the McastForwarders.
 //
@@ -179,16 +180,16 @@ struct McastForwarderCompare {
 // the ErmVpnTable and the forest node's candidate edges are advertised using
 // the EdgeDiscovery attribute. The local_tree_route_ keeps track of the route.
 //
-// If this control node is elected to be the tree builder for this (G,S), a
+// If this control-node is elected to be the tree builder for this (G,S), a
 // global distribution tree of all Local McastForwarders is built.  Relevant
-// edges of this global distribution tree are advertised to each control node
+// edges of this global distribution tree are advertised to each control-node
 // by adding a GlobalTreeRoute for each Local McastForwarder.  The forwarding
 // edges are encoded using the EdgeForwarding attribute.
 //
-// Whether the tree builder is this control node or another control node, the
-// global_tree_route_ member keeps track of the GlobalTreeRoute that contains
-// the forwarding edges relevant to this control node.  The RouterId in the
-// GlobalTreeRoute is used to decide if it's for this control node.  We set
+// Whether the tree builder is this control-node or another control-node, the
+// tree_result_route_ member keeps track of the GlobalTreeRoute that contains
+// the forwarding edges relevant to this control-node.  The RouterId in the
+// GlobalTreeRoute is used to decide if it's for this control-node.  We set
 // our DBState on this ErmVpnRoute to be the McastSGEntry.
 //
 // The McastSGEntry is enqueued on the WorkQueue in the McastManagerPartition
@@ -218,9 +219,9 @@ public:
     Ip4Address group() const { return group_; }
     Ip4Address source() const { return source_; }
     McastManagerPartition *partition() { return partition_; }
-    const ErmVpnRoute *global_tree_route() const { return global_tree_route_; }
-    void set_global_tree_route(ErmVpnRoute *route) { global_tree_route_ = route; }
-    void clear_global_tree_route() { global_tree_route_ = NULL; }
+    const ErmVpnRoute *tree_result_route() const { return tree_result_route_; }
+    void set_tree_result_route(ErmVpnRoute *route) { tree_result_route_ = route; }
+    void clear_tree_result_route() { tree_result_route_ = NULL; }
 
     bool on_work_queue() { return on_work_queue_; }
     void set_on_work_queue() { on_work_queue_ = true; }
@@ -242,7 +243,7 @@ private:
     Ip4Address group_, source_;
     McastForwarder *forest_node_;
     ErmVpnRoute *local_tree_route_;
-    ErmVpnRoute *global_tree_route_;
+    ErmVpnRoute *tree_result_route_;
     std::vector<ForwarderSet *> forwarder_sets_;
     std::vector<bool> update_needed_;
     bool on_work_queue_;
@@ -332,10 +333,10 @@ private:
 // It is responsible for listening to route notifications on the associated
 // ErmVpnTable and building distribution trees for edge replicated multicast.
 // A local distribution tree consisting of all the vRouters that subscribed
-// to this control node is built for each (G,S).  Further, if this control
+// to this control-node is built for each (G,S).  Further, if this control
 // node is elected to be the tree builder for a (G,S) a global distribution
 // is also built.  The global tree is built by selecting edges from the set
-// of candidate edges advertised by each control node.
+// of candidate edges advertised by each control-node.
 //
 // It also provides the ErmVpnTable class with an API to get the UpdateInfo
 // for a route in the ErmVpnTable. This is used by the table's Export method
