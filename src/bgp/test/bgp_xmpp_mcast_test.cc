@@ -161,22 +161,22 @@ protected:
         bs_x_->Configure(config);
     }
 
-    int ExtractLabel(const test::NetworkAgentMock *agent,
-        const string &net, const string &prefix) {
+    int ExtractLabel(boost::shared_ptr<const test::NetworkAgentMock> agent,
+            const string &net, const string &prefix) {
         const NetworkAgentMock::McastRouteEntry *rt =
             agent->McastRouteLookup(net, prefix);
         return (rt ? rt->entry.nlri.source_label : 0);
     }
 
-    int GetLabel(boost::shared_ptr<test::NetworkAgentMock> agent,
+    int VerifyLabel(boost::shared_ptr<const test::NetworkAgentMock> agent,
             const string &net, const string &prefix,
             int first_label = 0, int last_label = 0) {
-        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent.get(), net, prefix) >= first_label);
-        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent.get(), net, prefix) <= last_label);
-        return ExtractLabel(agent.get(), net, prefix);
+        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent, net, prefix) >= first_label);
+        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent, net, prefix) <= last_label);
+        return ExtractLabel(agent, net, prefix);
     }
 
-    bool CheckOListElem(const test::NetworkAgentMock *agent,
+    bool CheckOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
             const string &net, const string &prefix, size_t olist_size,
             const string &address, int label, const string &encap) {
         const NetworkAgentMock::McastRouteEntry *rt =
@@ -220,7 +220,7 @@ protected:
     void VerifyOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
             const string &net, const string &prefix, size_t olist_size) {
         TASK_UTIL_EXPECT_TRUE(
-            CheckOListElem(agent.get(), net, prefix, olist_size, "", 0, ""));
+            CheckOListElem(agent, net, prefix, olist_size, "", 0, ""));
     }
 
     void VerifyOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
@@ -229,8 +229,8 @@ protected:
             boost::shared_ptr<test::NetworkAgentMock> other_agent,
             const string &encap = "") {
         TASK_UTIL_EXPECT_TRUE(
-            CheckOListElem(agent.get(), net, prefix, olist_size, address,
-                ExtractLabel(other_agent.get(), net, prefix), encap));
+            CheckOListElem(agent, net, prefix, olist_size, address,
+                ExtractLabel(other_agent, net, prefix), encap));
     }
 
     EventManager evm_;
@@ -362,8 +362,8 @@ TEST_F(BgpXmppMcastSubscriptionTest, PendingSubscribe) {
     VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Verify labels.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -426,8 +426,8 @@ TEST_F(BgpXmppMcastSubscriptionTest, SubsequentSubscribeUnsubscribe) {
     VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Verify labels.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
 
     // Verify that agent a mcast route was added with instance_id = 2.
     ErmVpnTable *blue_table_ = static_cast<ErmVpnTable *>(
@@ -510,9 +510,9 @@ TEST_F(BgpXmppMcastMultiAgentTest, GroupOnly) {
     VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Verify the labels used by all agents.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-    GetLabel(agent_xc_, "blue", mroute, 30000, 39999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    VerifyLabel(agent_xc_, "blue", mroute, 30000, 39999);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -553,9 +553,9 @@ TEST_F(BgpXmppMcastMultiAgentTest, MultipleRoutes) {
         VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
         // Verify the labels used for the route by all agents.
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-        GetLabel(agent_xc_, "blue", mroute, 30000, 39999);
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+        VerifyLabel(agent_xc_, "blue", mroute, 30000, 39999);
     }
 
     // Delete mcast route for all agents.
@@ -587,9 +587,9 @@ TEST_F(BgpXmppMcastMultiAgentTest, Join) {
     VerifyOListElem(agent_xc_, "blue", mroute, 0);
 
     // Verify the labels used for route by all agents.
-    label_xa = GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    label_xb = GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-    label_xc = GetLabel(agent_xc_, "blue", mroute);
+    label_xa = VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    label_xb = VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    label_xc = VerifyLabel(agent_xc_, "blue", mroute);
 
     // Add mcast route for agent c.
     agent_xc_->AddMcastRoute("blue", mroute, "10.1.1.3", "30000-39999");
@@ -608,11 +608,11 @@ TEST_F(BgpXmppMcastMultiAgentTest, Join) {
 
     // Make sure that labels have changed for all agents.
     TASK_UTIL_EXPECT_NE(label_xa,
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999));
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999));
     TASK_UTIL_EXPECT_NE(label_xb,
-        GetLabel(agent_xb_, "blue", mroute, 20000, 29999));
+        VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999));
     TASK_UTIL_EXPECT_NE(label_xc,
-        GetLabel(agent_xc_, "blue", mroute, 30000, 39999));
+        VerifyLabel(agent_xc_, "blue", mroute, 30000, 39999));
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -643,9 +643,9 @@ TEST_F(BgpXmppMcastMultiAgentTest, Leave) {
     VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Get the labels used for route by all agents.
-    label_xa = GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    label_xb = GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-    label_xc = GetLabel(agent_xc_, "blue", mroute, 30000, 39999);
+    label_xa = VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    label_xb = VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    label_xc = VerifyLabel(agent_xc_, "blue", mroute, 30000, 39999);
 
     // Delete mcast route for agent c.
     agent_xc_->DeleteMcastRoute("blue", mroute);
@@ -662,11 +662,11 @@ TEST_F(BgpXmppMcastMultiAgentTest, Leave) {
 
     // Make sure that labels have changed for all agents.
     TASK_UTIL_EXPECT_NE(label_xa,
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999));
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999));
     TASK_UTIL_EXPECT_NE(label_xb,
-        GetLabel(agent_xb_, "blue", mroute, 20000, 29999));
+        VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999));
     TASK_UTIL_EXPECT_NE(label_xc,
-        GetLabel(agent_xc_, "blue", mroute));
+        VerifyLabel(agent_xc_, "blue", mroute));
 
     // Delete mcast route for agents a and b.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1206,8 +1206,8 @@ TEST_F(BgpXmppMcast2ServerTest, SingleAgent) {
     VerifyOListElem(agent_ya_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Verify the labels used by all agents.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
 
     // Delete mcast route for agent ya.
     agent_ya_->DeleteMcastRoute("blue", mroute);
@@ -1252,8 +1252,8 @@ TEST_F(BgpXmppMcast2ServerTest, SingleAgentMultipleRoutes) {
         VerifyOListElem(agent_xa_, "blue", mroute, 1, "10.1.1.4", agent_ya_);
         VerifyOListElem(agent_ya_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
     }
 
     // Delete mcast route for all agents.
@@ -1292,10 +1292,10 @@ TEST_F(BgpXmppMcast2ServerTest, MultipleAgent1) {
     VerifyOListElem(agent_yb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
     // Verify the labels used by all agents.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-    GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-    GetLabel(agent_yb_, "blue", mroute, 50000, 59999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+    VerifyLabel(agent_yb_, "blue", mroute, 50000, 59999);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1328,10 +1328,10 @@ TEST_F(BgpXmppMcast2ServerTest, MultipleAgent2) {
     VerifyOListElem(agent_yb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
     // Verify the labels used by all agents.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-    GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-    GetLabel(agent_yb_, "blue", mroute, 50000, 59999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+    VerifyLabel(agent_yb_, "blue", mroute, 50000, 59999);
 
     // Delete mcast route for agents xb and yb.
     agent_xb_->DeleteMcastRoute("blue", mroute);
@@ -1345,10 +1345,10 @@ TEST_F(BgpXmppMcast2ServerTest, MultipleAgent2) {
     VerifyOListElem(agent_yb_, "blue", mroute, 0);
 
     // Verify the labels used by agent xa and ya.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute);
-    GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-    GetLabel(agent_yb_, "blue", mroute);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute);
+    VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+    VerifyLabel(agent_yb_, "blue", mroute);
 
     // Delete mcast route for agents ya and yb.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1391,12 +1391,12 @@ TEST_F(BgpXmppMcast2ServerTest, MultipleAgent3) {
     VerifyOListElem(agent_yc_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
 
     // Verify the labels used by agent xa/xb/xc and ya/yb/yc.
-    GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-    GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
-    GetLabel(agent_xc_, "blue", mroute, 30000, 39999);
-    GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-    GetLabel(agent_yb_, "blue", mroute, 50000, 59999);
-    GetLabel(agent_yc_, "blue", mroute, 60000, 69999);
+    VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+    VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
+    VerifyLabel(agent_xc_, "blue", mroute, 30000, 39999);
+    VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+    VerifyLabel(agent_yb_, "blue", mroute, 50000, 59999);
+    VerifyLabel(agent_yc_, "blue", mroute, 60000, 69999);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1677,9 +1677,9 @@ TEST_F(BgpXmppMcast3ServerTest, SingleAgentRouteFlapping1) {
         VerifyOListElem(agent_za_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
         // Verify the labels used by all agents.
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-        GetLabel(agent_za_, "blue", mroute, 70000, 79999);
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        VerifyLabel(agent_za_, "blue", mroute, 70000, 79999);
 
         // Delete mcast route for agent xa.
         agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1691,9 +1691,9 @@ TEST_F(BgpXmppMcast3ServerTest, SingleAgentRouteFlapping1) {
         VerifyOListElem(agent_za_, "blue", mroute, 1, "10.1.1.4", agent_ya_);
 
         // Verify the labels used by agent ya and za.
-        GetLabel(agent_xa_, "blue", mroute);
-        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-        GetLabel(agent_za_, "blue", mroute, 70000, 79999);
+        VerifyLabel(agent_xa_, "blue", mroute);
+        VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        VerifyLabel(agent_za_, "blue", mroute, 70000, 79999);
 
         // Add mcast route for agent xa.
         agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999");
@@ -1728,9 +1728,9 @@ TEST_F(BgpXmppMcast3ServerTest, SingleAgentRouteFlapping2) {
         VerifyOListElem(agent_za_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
         // Verify the labels used by all agents.
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-        GetLabel(agent_za_, "blue", mroute, 70000, 79999);
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        VerifyLabel(agent_za_, "blue", mroute, 70000, 79999);
 
         // Delete mcast route for agent za.
         agent_za_->DeleteMcastRoute("blue", mroute);
@@ -1742,9 +1742,9 @@ TEST_F(BgpXmppMcast3ServerTest, SingleAgentRouteFlapping2) {
         VerifyOListElem(agent_za_, "blue", mroute, 0);
 
         // Verify the labels used by agent xa and ya.
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-        GetLabel(agent_za_, "blue", mroute);
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        VerifyLabel(agent_za_, "blue", mroute);
 
         // Add mcast route for agent za.
         agent_za_->AddMcastRoute("blue", mroute, "10.1.1.7", "70000-79999");
@@ -2290,7 +2290,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange1) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent xb.
-        GetLabel(agent_xb_, "blue", mroute, 20000, 29999);
+        VerifyLabel(agent_xb_, "blue", mroute, 20000, 29999);
 
         // Change mcast route for agent xb.
         agent_xb_->AddMcastRoute("blue", mroute, "10.1.1.2", "120000-129999");
@@ -2311,7 +2311,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange1) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent xb.
-        GetLabel(agent_xb_, "blue", mroute, 120000, 129999);
+        VerifyLabel(agent_xb_, "blue", mroute, 120000, 129999);
 
         // Change mcast route for agent xb.
         agent_xb_->AddMcastRoute("blue", mroute, "10.1.1.2", "20000-29999");
@@ -2360,7 +2360,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange2) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent xa.
-        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        VerifyLabel(agent_xa_, "blue", mroute, 10000, 19999);
 
         // Change mcast route for agent xb.
         agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "110000-119999");
@@ -2381,7 +2381,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange2) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent xa.
-        GetLabel(agent_xa_, "blue", mroute, 110000, 119999);
+        VerifyLabel(agent_xa_, "blue", mroute, 110000, 119999);
 
         // Change mcast route for agent xb.
         agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999");
@@ -2430,7 +2430,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange3) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent yb.
-        GetLabel(agent_yb_, "blue", mroute, 50000, 59999);
+        VerifyLabel(agent_yb_, "blue", mroute, 50000, 59999);
 
         // Change mcast route for agent yb.
         agent_yb_->AddMcastRoute("blue", mroute, "10.1.1.5", "150000-159999");
@@ -2451,7 +2451,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange3) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent yb.
-        GetLabel(agent_yb_, "blue", mroute, 150000, 159999);
+        VerifyLabel(agent_yb_, "blue", mroute, 150000, 159999);
 
         // Change mcast route for agent yb.
         agent_yb_->AddMcastRoute("blue", mroute, "10.1.1.5", "50000-59999");
@@ -2500,7 +2500,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange4) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent ya.
-        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        VerifyLabel(agent_ya_, "blue", mroute, 40000, 49999);
 
         // Change mcast route for agent ya.
         agent_ya_->AddMcastRoute("blue", mroute, "10.1.1.4", "140000-149999");
@@ -2521,7 +2521,7 @@ TEST_F(BgpXmppMcast3ServerTest, MultipleAgentLabelBlockChange4) {
         VerifyOListElem(agent_zb_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
 
         // Verify label used by agent ya.
-        GetLabel(agent_ya_, "blue", mroute, 140000, 149999);
+        VerifyLabel(agent_ya_, "blue", mroute, 140000, 149999);
 
         // Change mcast route for agent ya.
         agent_ya_->AddMcastRoute("blue", mroute, "10.1.1.4", "40000-49999");
