@@ -217,27 +217,18 @@ protected:
         return false;
     }
 
-    void VerifyOListElem(const test::NetworkAgentMock *agent,
+    void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
             const string &net, const string &prefix, size_t olist_size,
             const string &address, const string &encap = "") {
         TASK_UTIL_EXPECT_TRUE(
-            CheckOListElem(agent, net, prefix, olist_size, address, 0, encap));
+            CheckOListElem(agent.get(), net, prefix, olist_size, address, 0, encap));
     }
 
-    void VerifyOListElem(const test::NetworkAgentMock *agent,
+    void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
             const string &net, const string &prefix, size_t olist_size,
             const string &address, int label, const string &encap = "") {
         TASK_UTIL_EXPECT_TRUE(
-            CheckOListElem(agent, net, prefix, olist_size, address, label, encap));
-    }
-
-    void VerifyOListElem(const test::NetworkAgentMock *agent,
-            const string &net, const string &prefix, size_t olist_size,
-            const string &address, const test::NetworkAgentMock *other_agent,
-            const string &encap = "") {
-        TASK_UTIL_EXPECT_TRUE(
-            CheckOListElem(agent, net, prefix, olist_size, address,
-                ExtractLabel(other_agent, net, prefix), encap));
+            CheckOListElem(agent.get(), net, prefix, olist_size, address, label, encap));
     }
 
     void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
