@@ -468,7 +468,7 @@ TEST_F(BgpMulticastTest, SingleGroupIncrementalDel) {
 TEST_F(BgpMulticastTest, SingleGroupRepeatedDelAdd) {
     AddRouteAllPeers(red_table_, "192.168.1.255");
     task_util::WaitForIdle();
-    VerifyRouteCount(red_table_, kPeerCount);
+    VerifyRouteCount(red_table_, kPeerCount + 1);
     VerifySGCount(red_tm_, 1);
     VerifyForwarderCount(red_tm_, "192.168.1.255", kPeerCount);
 
