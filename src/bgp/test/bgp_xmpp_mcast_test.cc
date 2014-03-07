@@ -1192,7 +1192,6 @@ protected:
 
 TEST_F(BgpXmppMcast2ServerTest, SingleAgent) {
     const char *mroute = "225.0.0.1,0.0.0.0";
-    int label_xa, label_ya;
 
     // Add mcast route for agent xa.
     agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999");
@@ -1242,7 +1241,6 @@ TEST_F(BgpXmppMcast2ServerTest, SingleAgentMultipleRoutes) {
         "225.0.0.2,90.1.1.1",
         "225.0.0.2,90.1.1.2"
     };
-    int label_xa, label_ya;
 
     // Add mcast routes for all agents.
     BOOST_FOREACH(const char *mroute, mroute_list) {
@@ -1368,8 +1366,6 @@ TEST_F(BgpXmppMcast2ServerTest, MultipleAgent2) {
 
 TEST_F(BgpXmppMcast2ServerTest, MultipleAgent3) {
     const char *mroute = "225.0.0.1,0.0.0.0";
-    int label_xa, label_xb, label_xc;
-    int label_ya, label_yb, label_yc;
 
     // Add mcast route for all agents.
     agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999");
@@ -1740,9 +1736,9 @@ TEST_F(BgpXmppMcast3ServerTest, SingleAgentRouteFlapping2) {
         VerifyOListElem(agent_za_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
         // Verify the labels used by all agents.
-        label_xa = GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        label_ya = GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-        label_za = GetLabel(agent_za_, "blue", mroute, 70000, 79999);
+        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        GetLabel(agent_za_, "blue", mroute, 70000, 79999);
 
         // Delete mcast route for agent za.
         agent_za_->DeleteMcastRoute("blue", mroute);
@@ -1754,9 +1750,9 @@ TEST_F(BgpXmppMcast3ServerTest, SingleAgentRouteFlapping2) {
         VerifyOListElem(agent_za_, "blue", mroute, 0, "0.0.0.0");
 
         // Verify the labels used by agent xa and ya.
-        label_xa = GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
-        label_ya = GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
-        label_za = GetLabel(agent_za_, "blue", mroute);
+        GetLabel(agent_xa_, "blue", mroute, 10000, 19999);
+        GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
+        GetLabel(agent_za_, "blue", mroute);
 
         // Add mcast route for agent za.
         agent_za_->AddMcastRoute("blue", mroute, "10.1.1.7", "70000-79999");
