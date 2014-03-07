@@ -239,14 +239,24 @@ protected:
                 ExtractLabel(other_agent, net, prefix), encap));
     }
 
+    void VerifyOListElem(boost::intrusive_ptr<test::NetworkAgentMock> agent,
+            const string &net, const string &prefix,
+            size_t olist_size, const string &address,
+            boost::intrusive_ptr<test::NetworkAgentMock> other_agent,
+            const string &encap = "") {
+        TASK_UTIL_EXPECT_TRUE(
+            CheckOListElem(agent.get(), net, prefix, olist_size, address,
+                ExtractLabel(other_agent.get(), net, prefix), encap));
+    }
+
     EventManager evm_;
     ServerThread thread_;
     boost::scoped_ptr<BgpServerTest> bs_x_;
     XmppServer *xs_x_;
     boost::scoped_ptr<BgpXmppChannelManagerMock> bcm_x_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_xa_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_xb_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_xc_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_xa_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_xb_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_xc_;
 
     static int validate_done_;
 };
@@ -480,7 +490,6 @@ protected:
 
 TEST_F(BgpXmppMcastMultiAgentTest, SourceAndGroup) {
     const char *mroute = "225.0.0.1,90.1.1.1";
-    int label_xa, label_xb, label_xc;
 
     // Add mcast route for all agents.
     agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999");
@@ -494,21 +503,10 @@ TEST_F(BgpXmppMcastMultiAgentTest, SourceAndGroup) {
     TASK_UTIL_EXPECT_EQ(1, agent_xc_->McastRouteCount());
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.2", agent_xb_.get());
-    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.3", agent_xc_.get());
-    VerifyOListElem(agent_xb_.get(), "blue", mroute, 1, "10.1.1.1", agent_xa_.get());
-    VerifyOListElem(agent_xc_.get(), "blue", mroute, 1, "10.1.1.1", agent_xa_.get());
-
-    // Get the labels used by all agents.
-    label_xa = GetLabel(agent_xa_.get(), "blue", mroute, 10000, 19999);
-    label_xb = GetLabel(agent_xb_.get(), "blue", mroute, 20000, 29999);
-    label_xc = GetLabel(agent_xc_.get(), "blue", mroute, 30000, 39999);
-
-    // Verify all OList elements on all agents, including outbound labels.
-    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.2", label_xb);
-    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.3", label_xc);
-    VerifyOListElem(agent_xb_.get(), "blue", mroute, 1, "10.1.1.1", label_xa);
-    VerifyOListElem(agent_xc_.get(), "blue", mroute, 1, "10.1.1.1", label_xa);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1236,9 +1234,9 @@ protected:
     boost::scoped_ptr<BgpServerTest> bs_y_;
     XmppServer *xs_y_;
     boost::scoped_ptr<BgpXmppChannelManagerMock> bcm_y_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_ya_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_yb_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_yc_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_ya_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_yb_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_yc_;
 };
 
 class BgpXmppMcast2ServerTest : public BgpXmppMcast2ServerTestBase {
@@ -1771,9 +1769,9 @@ protected:
     boost::scoped_ptr<BgpServerTest> bs_z_;
     XmppServer *xs_z_;
     boost::scoped_ptr<BgpXmppChannelManagerMock> bcm_z_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_za_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_zb_;
-    boost::scoped_ptr<test::NetworkAgentMock> agent_zc_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_za_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_zb_;
+    boost::intrusive_ptr<test::NetworkAgentMock> agent_zc_;
 };
 
 class BgpXmppMcast3ServerTest : public BgpXmppMcast3ServerTestBase {
