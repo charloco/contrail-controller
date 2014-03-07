@@ -30,10 +30,10 @@ using namespace test;
 class BgpXmppChannelMock : public BgpXmppChannel {
 public:
     BgpXmppChannelMock(XmppChannel *channel, BgpServer *server, 
-            BgpXmppChannelManager *manager) : 
+        BgpXmppChannelManager *manager) :
         BgpXmppChannel(channel, server, manager), count_(0) {
-            bgp_policy_ = RibExportPolicy(BgpProto::XMPP,
-                                          RibExportPolicy::XMPP, -1, 0);
+        bgp_policy_ =
+            RibExportPolicy(BgpProto::XMPP, RibExportPolicy::XMPP, -1, 0);
     }
 
     virtual void ReceiveUpdate(const XmppStanza::XmppMessage *msg) {
@@ -130,13 +130,13 @@ protected:
 
     virtual void SessionUp() {
         agent_xa_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-xa", xs_x_->GetPort(), "127.0.0.1", "127.0.0.101"));
+            &evm_, "agent-xa", xs_x_->GetPort(), "127.0.0.1", "127.0.0.101"));
         TASK_UTIL_EXPECT_TRUE(agent_xa_->IsEstablished());
         agent_xb_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-xb", xs_x_->GetPort(), "127.0.0.2", "127.0.0.101"));
+            &evm_, "agent-xb", xs_x_->GetPort(), "127.0.0.2", "127.0.0.101"));
         TASK_UTIL_EXPECT_TRUE(agent_xb_->IsEstablished());
         agent_xc_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-xc", xs_x_->GetPort(), "127.0.0.3", "127.0.0.101"));
+            &evm_, "agent-xc", xs_x_->GetPort(), "127.0.0.3", "127.0.0.101"));
         TASK_UTIL_EXPECT_TRUE(agent_xc_->IsEstablished());
     }
 
@@ -157,30 +157,30 @@ protected:
     virtual void Configure(const char *config_tmpl) {
         char config[8192];
         snprintf(config, sizeof(config), config_tmpl,
-                 bs_x_->session_manager()->GetPort());
+            bs_x_->session_manager()->GetPort());
         bs_x_->Configure(config);
     }
 
     int ExtractLabel(boost::shared_ptr<const test::NetworkAgentMock> agent,
-            const string &net, const string &prefix) {
+        const string &net, const string &prefix) {
         const NetworkAgentMock::McastRouteEntry *rt =
             agent->McastRouteLookup(net, prefix);
         return (rt ? rt->entry.nlri.source_label : 0);
     }
 
     int VerifyLabel(boost::shared_ptr<const test::NetworkAgentMock> agent,
-            const string &net, const string &prefix,
-            int first_label = 0, int last_label = 0) {
+        const string &net, const string &prefix,
+        int first_label = 0, int last_label = 0) {
         TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent, net, prefix) >= first_label);
         TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent, net, prefix) <= last_label);
         return ExtractLabel(agent, net, prefix);
     }
 
     bool CheckOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
-            const string &net, const string &prefix, size_t olist_size,
-            const string &address, int label, const string &encap) {
+        const string &net, const string &prefix, size_t olist_size,
+        const string &address, int label, const string &encap) {
         const NetworkAgentMock::McastRouteEntry *rt =
-                agent->McastRouteLookup(net, prefix);
+            agent->McastRouteLookup(net, prefix);
         if (olist_size == 0 && rt != NULL)
             return false;
         if (olist_size == 0)
@@ -203,7 +203,7 @@ protected:
 
         string label_str = integerToString(label);
         for (autogen::OlistType::const_iterator it = olist.begin();
-             it != olist.end(); ++it) {
+            it != olist.end(); ++it) {
             if (it->address == address) {
                 if (it->tunnel_encapsulation_list.tunnel_encapsulation !=
                     tunnel_encapsulation)
@@ -218,16 +218,16 @@ protected:
     }
 
     void VerifyOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
-            const string &net, const string &prefix, size_t olist_size) {
+        const string &net, const string &prefix, size_t olist_size) {
         TASK_UTIL_EXPECT_TRUE(
             CheckOListElem(agent, net, prefix, olist_size, "", 0, ""));
     }
 
     void VerifyOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
-            const string &net, const string &prefix,
-            size_t olist_size, const string &address,
-            boost::shared_ptr<test::NetworkAgentMock> other_agent,
-            const string &encap = "") {
+        const string &net, const string &prefix,
+        size_t olist_size, const string &address,
+        boost::shared_ptr<test::NetworkAgentMock> other_agent,
+        const string &encap = "") {
         TASK_UTIL_EXPECT_TRUE(
             CheckOListElem(agent, net, prefix, olist_size, address,
                 ExtractLabel(other_agent, net, prefix), encap));
@@ -696,8 +696,8 @@ TEST_F(BgpXmppMcastMultiAgentTest, Introspect) {
 
     // First get all tables - blue.ermvpn.0 and bgp.ermvpn.0.
     std::vector<size_t> result = list_of(4)(1);
-    Sandesh::set_response_callback(boost::bind(ValidateShowRouteResponse, _1,
-                                   result));
+    Sandesh::set_response_callback(
+        boost::bind(ValidateShowRouteResponse, _1, result));
     ShowRouteReq *show_req = new ShowRouteReq;
     validate_done_ = 0;
     show_req->HandleRequest();
@@ -707,8 +707,8 @@ TEST_F(BgpXmppMcastMultiAgentTest, Introspect) {
 
     // Now get blue.ermvpn.0.
     result = list_of(4);
-    Sandesh::set_response_callback(boost::bind(ValidateShowRouteResponse, _1,
-                                   result));
+    Sandesh::set_response_callback(
+        boost::bind(ValidateShowRouteResponse, _1, result));
     show_req = new ShowRouteReq;
     show_req->set_routing_table("blue.ermvpn.0");
     validate_done_ = 0;
@@ -719,8 +719,8 @@ TEST_F(BgpXmppMcastMultiAgentTest, Introspect) {
 
     // Now get bgp.ermvpn.0.
     result = list_of(1);
-    Sandesh::set_response_callback(boost::bind(ValidateShowRouteResponse, _1,
-                                   result));
+    Sandesh::set_response_callback(
+        boost::bind(ValidateShowRouteResponse, _1, result));
     show_req = new ShowRouteReq;
     show_req->set_routing_table("bgp.ermvpn.0");
     validate_done_ = 0;
@@ -742,8 +742,8 @@ TEST_F(BgpXmppMcastMultiAgentTest, Introspect) {
 
     // Get blue.ermvpn.0 again.
     result.resize(0);
-    Sandesh::set_response_callback(boost::bind(ValidateShowRouteResponse, _1,
-                                   result));
+    Sandesh::set_response_callback(
+        boost::bind(ValidateShowRouteResponse, _1, result));
     show_req = new ShowRouteReq;
     show_req->set_routing_table("blue.ermvpn.0");
     validate_done_ = 0;
@@ -1092,8 +1092,8 @@ protected:
     virtual void Configure(const char *config_tmpl) {
         char config[8192];
         snprintf(config, sizeof(config), config_tmpl,
-                 bs_x_->session_manager()->GetPort(),
-                 bs_y_->session_manager()->GetPort());
+            bs_x_->session_manager()->GetPort(),
+            bs_y_->session_manager()->GetPort());
         bs_x_->Configure(config);
         bs_y_->Configure(config);
     }
@@ -1128,13 +1128,13 @@ protected:
         BgpXmppMcastTest::SessionUp();
 
         agent_ya_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-ya", xs_y_->GetPort(), "127.0.0.4", "127.0.0.102"));
+            &evm_, "agent-ya", xs_y_->GetPort(), "127.0.0.4", "127.0.0.102"));
         TASK_UTIL_EXPECT_TRUE(agent_ya_->IsEstablished());
         agent_yb_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-yb", xs_y_->GetPort(), "127.0.0.5", "127.0.0.102"));
+            &evm_, "agent-yb", xs_y_->GetPort(), "127.0.0.5", "127.0.0.102"));
         TASK_UTIL_EXPECT_TRUE(agent_yb_->IsEstablished());
         agent_yc_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-yc", xs_y_->GetPort(), "127.0.0.6", "127.0.0.102"));
+            &evm_, "agent-yc", xs_y_->GetPort(), "127.0.0.6", "127.0.0.102"));
         TASK_UTIL_EXPECT_TRUE(agent_yc_->IsEstablished());
     }
 
@@ -1564,9 +1564,9 @@ protected:
     virtual void Configure(const char *config_tmpl) {
         char config[8192];
         snprintf(config, sizeof(config), config_tmpl,
-                 bs_x_->session_manager()->GetPort(),
-                 bs_y_->session_manager()->GetPort(),
-                 bs_z_->session_manager()->GetPort());
+            bs_x_->session_manager()->GetPort(),
+            bs_y_->session_manager()->GetPort(),
+            bs_z_->session_manager()->GetPort());
         bs_x_->Configure(config);
         bs_y_->Configure(config);
         bs_z_->Configure(config);
@@ -1602,13 +1602,13 @@ protected:
         BgpXmppMcast2ServerTestBase::SessionUp();
 
         agent_za_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-za", xs_z_->GetPort(), "127.0.0.7", "127.0.0.103"));
+            &evm_, "agent-za", xs_z_->GetPort(), "127.0.0.7", "127.0.0.103"));
         TASK_UTIL_EXPECT_TRUE(agent_za_->IsEstablished());
         agent_zb_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-zb", xs_z_->GetPort(), "127.0.0.8", "127.0.0.103"));
+            &evm_, "agent-zb", xs_z_->GetPort(), "127.0.0.8", "127.0.0.103"));
         TASK_UTIL_EXPECT_TRUE(agent_zb_->IsEstablished());
         agent_zc_.reset(new test::NetworkAgentMock(
-                &evm_, "agent-zc", xs_z_->GetPort(), "127.0.0.9", "127.0.0.103"));
+            &evm_, "agent-zc", xs_z_->GetPort(), "127.0.0.9", "127.0.0.103"));
         TASK_UTIL_EXPECT_TRUE(agent_zc_->IsEstablished());
     }
 
