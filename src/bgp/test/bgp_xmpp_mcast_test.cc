@@ -1343,14 +1343,6 @@ TEST_F(BgpXmppMcast2ServerTest, MultipleAgent2) {
     GetLabel(agent_ya_, "blue", mroute, 40000, 49999);
     GetLabel(agent_yb_, "blue", mroute, 50000, 59999);
 
-    // Verify all OList elements on all agents, including labels.
-    VerifyOListElem(agent_xa_, "blue", mroute, 1, "10.1.1.2", label_xb);
-    VerifyOListElem(agent_xb_, "blue", mroute, 2, "10.1.1.1", label_xa);
-    VerifyOListElem(agent_xb_, "blue", mroute, 2, "10.1.1.5", label_yb);
-    VerifyOListElem(agent_ya_, "blue", mroute, 1, "10.1.1.5", label_yb);
-    VerifyOListElem(agent_yb_, "blue", mroute, 2, "10.1.1.4", label_ya);
-    VerifyOListElem(agent_yb_, "blue", mroute, 2, "10.1.1.2", label_xb);
-
     // Delete mcast route for agents xb and yb.
     agent_xb_->DeleteMcastRoute("blue", mroute);
     agent_yb_->DeleteMcastRoute("blue", mroute);
