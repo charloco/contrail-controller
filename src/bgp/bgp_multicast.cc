@@ -12,6 +12,7 @@
 #include "bgp/bgp_route.h"
 #include "bgp/ipeer.h"
 #include "bgp/ermvpn/ermvpn_table.h"
+#include "bgp/origin-vn/origin_vn.h"
 #include "bgp/routing-instance/routing_instance.h"
 
 class McastTreeManager::DeleteActor : public LifetimeActor {
@@ -210,7 +211,6 @@ void McastForwarder::AddGlobalTreeRoute() {
 
     // Construct the prefix and route key.
     BgpTable *table = static_cast<BgpTable *>(route_->get_table());
-    BgpServer *server = table->routing_instance()->server();
     ErmVpnPrefix prefix(ErmVpnPrefix::GlobalTreeRoute,
         RouteDistinguisher::null_rd, router_id_,
         sg_entry_->group(), sg_entry_->source());
@@ -231,11 +231,18 @@ void McastForwarder::AddGlobalTreeRoute() {
 
     // Build the attributes.  Need to go through the tree links to build the
     // EdgeForwardingSpec.
+    const RoutingInstance *rt_instance = table->routing_instance();
+    BgpServer *server = table->routing_instance()->server();
     BgpAttrSpec attr_spec;
     BgpAttrNextHop nexthop(server->bgp_identifier());
     attr_spec.push_back(&nexthop);
     BgpAttrSourceRd source_rd(sg_entry_->GetSourceRd());
     attr_spec.push_back(&source_rd);
+    ExtCommunitySpec extcomm_spec;
+    OriginVn origin_vn(server->autonomous_system(),
+        rt_instance->virtual_network_index());
+    extcomm_spec.communities.push_back(origin_vn.GetExtCommunityValue());
+    attr_spec.push_back(&extcomm_spec);
     EdgeForwardingSpec efspec;
     for (McastForwarderList::const_iterator it = tree_links_.begin();
          it != tree_links_.end(); ++it) {
@@ -476,11 +483,17 @@ void McastSGEntry::AddLocalTreeRoute() {
     }
 
     // Build the attributes.
+    RoutingInstance *rt_instance = partition_->routing_instance();
     BgpAttrSpec attr_spec;
     BgpAttrNextHop nexthop(server->bgp_identifier());
     attr_spec.push_back(&nexthop);
     BgpAttrSourceRd source_rd(GetSourceRd());
     attr_spec.push_back(&source_rd);
+    ExtCommunitySpec extcomm_spec;
+    OriginVn origin_vn(server->autonomous_system(),
+        rt_instance->virtual_network_index());
+    extcomm_spec.communities.push_back(origin_vn.GetExtCommunityValue());
+    attr_spec.push_back(&extcomm_spec);
     EdgeDiscoverySpec edspec;
     for (int idx = 1; idx <= McastTreeManager::kDegree - 1; ++idx) {
         EdgeDiscoverySpec::Edge *edge = new EdgeDiscoverySpec::Edge;
@@ -739,6 +752,10 @@ bool McastManagerPartition::ProcessSGEntry(McastSGEntry *sg_entry) {
 //
 DBTablePartBase *McastManagerPartition::GetTablePartition() {
     return tree_manager_->GetTablePartition(part_id_);
+}
+
+const RoutingInstance *McastManagerPartition::routing_instance() const {
+    return tree_manager_->table()->routing_instance();
 }
 
 BgpServer *McastManagerPartition::server() {

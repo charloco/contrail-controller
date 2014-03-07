@@ -26,6 +26,7 @@ class McastForwarder;
 class McastManagerPartition;
 class McastSGEntry;
 class McastTreeManager;
+class RoutingInstance;
 struct UpdateInfo;
 
 typedef std::vector<McastForwarder *> McastForwarderList;
@@ -304,8 +305,9 @@ public:
     void EnqueueSGEntry(McastSGEntry *sg_entry);
 
     DBTablePartBase *GetTablePartition();
-    McastTreeManager *tree_manager() const { return tree_manager_; }
+    const RoutingInstance *routing_instance() const;
     BgpServer *server();
+    McastTreeManager *tree_manager() const { return tree_manager_; }
 
     bool empty() { return sg_list_.empty(); }
     size_t size() { return sg_list_.size(); }

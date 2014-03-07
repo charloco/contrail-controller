@@ -351,7 +351,7 @@ RoutePathReplicator::DBStateSync(BgpTable *table, BgpRoute *rt,
 //
 // Update the ExtCommunity with the RouteTargets from the export list
 // and the OriginVn. The OriginVn is derived from the RouteTargets in
-// l3vpn routes.
+// vpn routes.
 //
 static ExtCommunityPtr UpdateExtCommunity(BgpServer *server,
         const RoutingInstance *rtinstance, const ExtCommunity *ext_community,
@@ -365,7 +365,7 @@ static ExtCommunityPtr UpdateExtCommunity(BgpServer *server,
         return extcomm_ptr;
     }
 
-    // Bail if we have a l3vpn/evpn route without extended communities.
+    // Bail if we have a vpn route without extended communities.
     if (!ext_community)
         return ExtCommunityPtr(NULL);
 
@@ -376,7 +376,6 @@ static ExtCommunityPtr UpdateExtCommunity(BgpServer *server,
             continue;
         return ExtCommunityPtr(ext_community);
     }
-
 
     // Add the OriginVn if we have a valid vn index.
     int vn_index =

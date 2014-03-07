@@ -13,6 +13,7 @@
 #include "bgp/bgp_server.h"
 #include "bgp/ermvpn/ermvpn_route.h"
 #include "bgp/inet/inet_table.h"
+#include "bgp/origin-vn/origin_vn.h"
 #include "bgp/routing-instance/routing_instance.h"
 #include "db/db_table_partition.h"
 
@@ -71,14 +72,19 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
         ExtCommunityPtr community) {
     assert(src_table->family() == Address::ERMVPN);
 
-    ErmVpnTable *src_mvpn_table = dynamic_cast<ErmVpnTable *>(src_table);
-    if (!IsDefault() && !src_mvpn_table->IsDefault())
+    ErmVpnTable *src_ermvpn_table = dynamic_cast<ErmVpnTable *>(src_table);
+    if (!IsDefault() && !src_ermvpn_table->IsDefault())
         return NULL;
 
     ErmVpnRoute *mroute = dynamic_cast<ErmVpnRoute *>(src_rt);
     assert(mroute);
 
     if (mroute->GetPrefix().type() == ErmVpnPrefix::NativeRoute)
+        return NULL;
+
+    OriginVn origin_vn(server->autonomous_system(),
+        routing_instance()->virtual_network_index());
+    if (!community->ContainsOriginVn(origin_vn.GetExtCommunity()))
         return NULL;
 
     ErmVpnPrefix mprefix(mroute->GetPrefix());
