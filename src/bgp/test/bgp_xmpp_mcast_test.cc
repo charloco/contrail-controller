@@ -217,12 +217,14 @@ protected:
         return false;
     }
 
+#if 0
     void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
             const string &net, const string &prefix, size_t olist_size,
             const string &address, const string &encap = "") {
         TASK_UTIL_EXPECT_TRUE(
             CheckOListElem(agent.get(), net, prefix, olist_size, address, 0, encap));
     }
+#endif
 
     void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
             const string &net, const string &prefix, size_t olist_size,
@@ -852,10 +854,10 @@ TEST_F(BgpXmppMcastEncapTest, ImplicitOnly) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -874,10 +876,10 @@ TEST_F(BgpXmppMcastEncapTest, ExplicitSingle) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "gre");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "gre");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "gre");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "gre");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "gre");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "gre");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -896,10 +898,10 @@ TEST_F(BgpXmppMcastEncapTest, ExplicitAll) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "all");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "all");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "all");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "all");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -918,10 +920,10 @@ TEST_F(BgpXmppMcastEncapTest, ExplicitMixed1) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "gre");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "udp");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "all");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "udp");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -940,10 +942,10 @@ TEST_F(BgpXmppMcastEncapTest, ExplicitMixed2) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "all");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "all");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "gre");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "all");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "gre");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "gre");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -962,10 +964,10 @@ TEST_F(BgpXmppMcastEncapTest, ImplicitAndExplicitMixed1) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "all");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -984,10 +986,10 @@ TEST_F(BgpXmppMcastEncapTest, ImplicitAndExplicitMixed2) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "gre");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "all");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "all");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1006,10 +1008,10 @@ TEST_F(BgpXmppMcastEncapTest, ImplicitAndExplicitMixed3) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "gre");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "all");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -1028,10 +1030,10 @@ TEST_F(BgpXmppMcastEncapTest, Change) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Update mcast route for all agents - change encaps to all.
     agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999", "all");
@@ -1040,10 +1042,10 @@ TEST_F(BgpXmppMcastEncapTest, Change) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "all");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "all");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "all");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "all");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "all");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "all");
 
     // Update mcast route for all agents - change encaps to gre.
     agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.1", "10000-19999", "gre");
@@ -1052,10 +1054,10 @@ TEST_F(BgpXmppMcastEncapTest, Change) {
     task_util::WaitForIdle();
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", "gre");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", "gre");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", "gre");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_, "gre");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_, "gre");
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "gre");
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_, "gre");
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
