@@ -776,10 +776,10 @@ TEST_F(BgpXmppMcastMultiAgentTest, ChangeNexthop) {
     TASK_UTIL_EXPECT_EQ(1, agent_xc_->McastRouteCount());
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.1", agent_xa_);
 
     // Update mcast route for agent_xa - change nexthop to 10.1.1.101.
     agent_xa_->AddMcastRoute("blue", mroute, "10.1.1.101", "10000-19999");
@@ -791,10 +791,10 @@ TEST_F(BgpXmppMcastMultiAgentTest, ChangeNexthop) {
     TASK_UTIL_EXPECT_EQ(1, agent_xc_->McastRouteCount());
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3");
-    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.101");
-    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.101");
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.2", agent_xb_);
+    VerifyOListElem(agent_xa_, "blue", mroute, 2, "10.1.1.3", agent_xc_);
+    VerifyOListElem(agent_xb_, "blue", mroute, 1, "10.1.1.101", agent_xa_);
+    VerifyOListElem(agent_xc_, "blue", mroute, 1, "10.1.1.101", agent_xa_);
 
     // Delete mcast route for all agents.
     agent_xa_->DeleteMcastRoute("blue", mroute);
@@ -823,10 +823,10 @@ TEST_F(BgpXmppMcastMultiAgentTest, MultipleNetworks) {
 
     // Verify all OList elements for the route on all agents.
     BOOST_FOREACH(const char *net, networks) {
-        VerifyOListElem(agent_xa_, net, mroute, 2, "10.1.1.2");
-        VerifyOListElem(agent_xa_, net, mroute, 2, "10.1.1.3");
-        VerifyOListElem(agent_xb_, net, mroute, 1, "10.1.1.1");
-        VerifyOListElem(agent_xc_, net, mroute, 1, "10.1.1.1");
+        VerifyOListElem(agent_xa_, net, mroute, 2, "10.1.1.2", agent_xb_);
+        VerifyOListElem(agent_xa_, net, mroute, 2, "10.1.1.3", agent_xc_);
+        VerifyOListElem(agent_xb_, net, mroute, 1, "10.1.1.1", agent_xa_);
+        VerifyOListElem(agent_xc_, net, mroute, 1, "10.1.1.1", agent_xa_);
     }
 
     // Delete mcast route for all agents.
