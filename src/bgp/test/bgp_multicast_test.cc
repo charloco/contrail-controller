@@ -670,19 +670,19 @@ TEST_F(BgpMulticastTest, TreeUpdateCompression) {
     AddRouteAllPeers(red_table_, "192.168.1.255");
     scheduler->Start();
     task_util::WaitForIdle();
-    TASK_UTIL_EXPECT_EQ(1, VerifyTreeUpdateCount(red_tm_));
+    TASK_UTIL_EXPECT_EQ(2, VerifyTreeUpdateCount(red_tm_));
 
     scheduler->Stop();
     DelRouteOddPeers(red_table_, "192.168.1.255");
     scheduler->Start();
     task_util::WaitForIdle();
-    TASK_UTIL_EXPECT_EQ(2, VerifyTreeUpdateCount(red_tm_));
+    TASK_UTIL_EXPECT_EQ(4, VerifyTreeUpdateCount(red_tm_));
 
     scheduler->Stop();
     DelRouteEvenPeers(red_table_, "192.168.1.255");
     scheduler->Start();
     task_util::WaitForIdle();
-    TASK_UTIL_EXPECT_EQ(2, VerifyTreeUpdateCount(red_tm_));
+    TASK_UTIL_EXPECT_EQ(6, VerifyTreeUpdateCount(red_tm_));
 }
 
 int main(int argc, char **argv) {
