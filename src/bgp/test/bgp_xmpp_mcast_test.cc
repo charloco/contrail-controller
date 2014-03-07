@@ -230,6 +230,15 @@ protected:
             CheckOListElem(agent, net, prefix, olist_size, address, label, encap));
     }
 
+    void VerifyOListElem(const test::NetworkAgentMock *agent,
+            const string &net, const string &prefix, size_t olist_size,
+            const string &address, const test::NetworkAgentMock *other_agent,
+            const string &encap = "") {
+        TASK_UTIL_EXPECT_TRUE(
+            CheckOListElem(agent, net, prefix, olist_size, address,
+                ExtractLabel(other_agent, net, prefix), encap));
+    }
+
     EventManager evm_;
     ServerThread thread_;
     boost::scoped_ptr<BgpServerTest> bs_x_;
@@ -485,10 +494,10 @@ TEST_F(BgpXmppMcastMultiAgentTest, SourceAndGroup) {
     TASK_UTIL_EXPECT_EQ(1, agent_xc_->McastRouteCount());
 
     // Verify all OList elements on all agents.
-    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.2");
-    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.3");
-    VerifyOListElem(agent_xb_.get(), "blue", mroute, 1, "10.1.1.1");
-    VerifyOListElem(agent_xc_.get(), "blue", mroute, 1, "10.1.1.1");
+    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.2", agent_xb_.get());
+    VerifyOListElem(agent_xa_.get(), "blue", mroute, 2, "10.1.1.3", agent_xc_.get());
+    VerifyOListElem(agent_xb_.get(), "blue", mroute, 1, "10.1.1.1", agent_xa_.get());
+    VerifyOListElem(agent_xc_.get(), "blue", mroute, 1, "10.1.1.1", agent_xa_.get());
 
     // Get the labels used by all agents.
     label_xa = GetLabel(agent_xa_.get(), "blue", mroute, 10000, 19999);
