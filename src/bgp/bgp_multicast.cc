@@ -713,19 +713,19 @@ void McastManagerPartition::EnqueueSGEntry(McastSGEntry *sg_entry) {
 }
 
 //
-// Callback for the WorkQueue.  Get rid of the McastSGEntry if it there no
-// McastForwarders under it. Otherwise, update the distribution tree for it.
+// Callback for the WorkQueue. Updates distribution trees for the McastSGEntry.
+// Also gets rid of the McastSGEntry if it is eligible to be deleted.
 //
 bool McastManagerPartition::ProcessSGEntry(McastSGEntry *sg_entry) {
     CHECK_CONCURRENCY("db::DBTable");
 
     sg_entry->clear_on_work_queue();
+    sg_entry->UpdateTree();
+    update_count_++;
+
     if (sg_entry->empty()) {
         sg_list_.erase(sg_entry);
         delete sg_entry;
-    } else {
-        sg_entry->UpdateTree();
-        update_count_++;
     }
 
     if (sg_list_.empty())
@@ -825,10 +825,12 @@ UpdateInfo *McastTreeManager::GetUpdateInfo(ErmVpnRoute *route) {
 }
 
 //
-// DBListener callback handler for the ErmVpnTable. It creates or deletes
-// the associated McastForwarder as appropriate. Also creates a McastSGEntry
-// if one doesn't already exist.  However, McastSGEntrys don't get deleted
-// from here.  They only get deleted from the WorkQueue callback routine.
+// DBListener callback handler for Native and Local routes in the ErmVpnTable.
+// It creates, updates or deletes the associated McastForwarder as appropriate.
+//
+// Creates a McastSGEntry if one doesn't already exist. However, McastSGEntrys
+// don't get deleted from here.  They only get deleted from WorkQueue callback
+// routine i.e. McastManagerPartition::ProcessSGEntry.
 //
 void McastTreeManager::TreeNodeListener(McastManagerPartition *partition,
         ErmVpnRoute *route) {
@@ -874,7 +876,9 @@ void McastTreeManager::TreeNodeListener(McastManagerPartition *partition,
 }
 
 //
-// DBListener callback handler for  GlobalTreeRoutes in the ErmVpnTable.
+// DBListener callback handler for GlobalTreeRoutes in the ErmVpnTable. It
+// updates the tree_result_route_ and triggers re-evaluation of the forest
+// node McastForwarder's BgpOlist.
 //
 void McastTreeManager::TreeResultListener(McastManagerPartition *partition,
         ErmVpnRoute *route) {
