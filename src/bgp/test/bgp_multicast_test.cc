@@ -276,7 +276,7 @@ protected:
             McastForwarder *forwarder) {
         ConcurrencyScope scope("db::DBTable");
 
-        TASK_UTIL_EXPECT_EQ(0, forwarder->label());
+        TASK_UTIL_EXPECT_NE(0, forwarder->label());
         TASK_UTIL_EXPECT_EQ(0, forwarder->tree_links_.size());
         TASK_UTIL_EXPECT_TRUE(forwarder->route() != NULL);
         TASK_UTIL_EXPECT_EQ(1, forwarder->route()->count());
