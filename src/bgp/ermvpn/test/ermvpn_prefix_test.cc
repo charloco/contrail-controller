@@ -197,6 +197,43 @@ TEST_F(ErmVpnRouteTest, NativeToString) {
     EXPECT_EQ("10.1.1.1:65535:224.1.2.3,192.168.1.1", route.ToXmppIdString());
 }
 
+TEST_F(ErmVpnRouteTest, NativeIsValid1) {
+    string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    route.MarkDelete();
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, NativeIsValid2) {
+    string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, NativeIsValid3) {
+    string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    BgpAttrPtr attr(new BgpAttr);
+    BgpPath path(0, BgpPath::Local, attr, 0, 0);
+    route.InsertPath(&path);
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, NativeIsValid4) {
+    string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    BgpAttrPtr attr(new BgpAttr);
+    LabelBlockPtr label_block(new LabelBlock(1000, 1999));
+    attr->set_label_block(label_block);
+    BgpPath path(0, BgpPath::Local, attr, 0, 0);
+    route.InsertPath(&path);
+    EXPECT_TRUE(route.IsValid());
+}
+
 TEST_F(ErmVpnRouteTest, LocalToString) {
     string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
