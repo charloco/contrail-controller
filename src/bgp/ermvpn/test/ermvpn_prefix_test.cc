@@ -191,11 +191,37 @@ TEST_F(ErmVpnRouteTest, LocalToString) {
     EXPECT_EQ("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
 }
 
+TEST_F(ErmVpnRouteTest, LocalProtoPrefix) {
+    string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix1(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix1);
+    BgpProtoPrefix proto_prefix;
+    route.BuildProtoPrefix(&proto_prefix, 0);
+    ErmVpnPrefix prefix2(proto_prefix);
+    EXPECT_EQ(ErmVpnPrefix::LocalTreeRoute, proto_prefix.type);
+    EXPECT_EQ(22 * 8, proto_prefix.prefixlen);
+    EXPECT_EQ(22 * 8, proto_prefix.prefix.size());
+    EXPECT_EQ(prefix1, prefix2);
+}
+
 TEST_F(ErmVpnRouteTest, GlobalToString) {
     string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
     EXPECT_EQ("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
+}
+
+TEST_F(ErmVpnRouteTest, GlobalProtoPrefix) {
+    string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix1(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix1);
+    BgpProtoPrefix proto_prefix;
+    route.BuildProtoPrefix(&proto_prefix, 0);
+    ErmVpnPrefix prefix2(proto_prefix);
+    EXPECT_EQ(ErmVpnPrefix::GlobalTreeRoute, proto_prefix.type);
+    EXPECT_EQ(22 * 8, proto_prefix.prefixlen);
+    EXPECT_EQ(22 * 8, proto_prefix.prefix.size());
+    EXPECT_EQ(prefix1, prefix2);
 }
 
 int main(int argc, char **argv) {
