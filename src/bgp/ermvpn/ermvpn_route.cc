@@ -207,6 +207,15 @@ bool ErmVpnPrefix::IsValid(uint8_t type) {
     return (type == NativeRoute || IsValidForBgp(type));
 }
 
+bool ErmVpnPrefix::operator==(const ErmVpnPrefix &rhs) const {
+    return (
+        type_ == rhs.type_ &&
+        rd_ == rhs.rd_ &&
+        router_id_ = rhs.router_id_ &&
+        group_ = rhs.group_ &&
+        source_ = rhs.source_);
+}
+
 ErmVpnRoute::ErmVpnRoute(const ErmVpnPrefix &prefix) : prefix_(prefix) {
 }
 

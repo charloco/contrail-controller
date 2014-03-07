@@ -39,6 +39,7 @@ public:
     std::string ToXmppIdString() const;
     static bool IsValidForBgp(uint8_t type);
     static bool IsValid(uint8_t type);
+    bool operator==(const ErmVpnPrefix &rhs) const;
 
     uint8_t type() const { return type_; }
     RouteDistinguisher route_distinguisher() const { return rd_; }
