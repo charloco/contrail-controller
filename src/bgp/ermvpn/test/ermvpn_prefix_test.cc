@@ -173,6 +173,31 @@ TEST_F(ErmVpnPrefixTest, Error9) {
     EXPECT_EQ(ErmVpnPrefix::Invalid, prefix.type());
 }
 
+class ErmVpnRouteTest : public ::testing::Test {
+};
+
+TEST_F(ErmVpnRouteTest, NativeToString) {
+    string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EXPECT_EQ("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1", route.ToString());
+    EXPECT_EQ("10.1.1.1:65535:224.1.2.3,192.168.1.1", route.ToXmppIdString());
+}
+
+TEST_F(ErmVpnRouteTest, LocalToString) {
+    string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EXPECT_EQ("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
+}
+
+TEST_F(ErmVpnRouteTest, GlobalToString) {
+    string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EXPECT_EQ("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
+}
+
 int main(int argc, char **argv) {
     bgp_log_test::init();
     ::testing::InitGoogleTest(&argc, argv);
