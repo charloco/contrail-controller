@@ -61,7 +61,7 @@ RouteDistinguisher RouteDistinguisher::FromString(
     Ip4Address addr = Ip4Address::from_string(first, ec);
     int offset;
     char *endptr;
-    long asn;
+    long asn = -1;
     if (ec.value() != 0) {
         //Not an IP address. Try ASN
         asn = strtol(first.c_str(), &endptr, 10);
