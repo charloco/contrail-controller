@@ -168,12 +168,12 @@ protected:
         return (rt ? rt->entry.nlri.source_label : 0);
     }
 
-    int GetLabel(const test::NetworkAgentMock *agent,
+    void GetLabel(boost::shared_ptr<test::NetworkAgentMock> agent,
             const string &net, const string &prefix,
             int first_label = 0, int last_label = 0) {
-        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent, net, prefix) >= first_label);
-        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent, net, prefix) <= last_label);
-        return ExtractLabel(agent, net, prefix);
+        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent.get(), net, prefix) >= first_label);
+        TASK_UTIL_EXPECT_TRUE(ExtractLabel(agent.get(), net, prefix) <= last_label);
+        return ExtractLabel(agent.get(), net, prefix);
     }
 
     bool CheckOListElem(const test::NetworkAgentMock *agent,
