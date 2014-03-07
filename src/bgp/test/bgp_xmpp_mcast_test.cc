@@ -4,6 +4,7 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "base/test/task_test_util.h"
 #include "bgp/bgp_sandesh.h"
@@ -239,10 +240,10 @@ protected:
                 ExtractLabel(other_agent, net, prefix), encap));
     }
 
-    void VerifyOListElem(boost::intrusive_ptr<test::NetworkAgentMock> agent,
+    void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
             const string &net, const string &prefix,
             size_t olist_size, const string &address,
-            boost::intrusive_ptr<test::NetworkAgentMock> other_agent,
+            boost::shared_ptr<test::NetworkAgentMock> other_agent,
             const string &encap = "") {
         TASK_UTIL_EXPECT_TRUE(
             CheckOListElem(agent.get(), net, prefix, olist_size, address,
@@ -254,9 +255,9 @@ protected:
     boost::scoped_ptr<BgpServerTest> bs_x_;
     XmppServer *xs_x_;
     boost::scoped_ptr<BgpXmppChannelManagerMock> bcm_x_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_xa_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_xb_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_xc_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_xa_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_xb_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_xc_;
 
     static int validate_done_;
 };
@@ -1234,9 +1235,9 @@ protected:
     boost::scoped_ptr<BgpServerTest> bs_y_;
     XmppServer *xs_y_;
     boost::scoped_ptr<BgpXmppChannelManagerMock> bcm_y_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_ya_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_yb_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_yc_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_ya_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_yb_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_yc_;
 };
 
 class BgpXmppMcast2ServerTest : public BgpXmppMcast2ServerTestBase {
@@ -1769,9 +1770,9 @@ protected:
     boost::scoped_ptr<BgpServerTest> bs_z_;
     XmppServer *xs_z_;
     boost::scoped_ptr<BgpXmppChannelManagerMock> bcm_z_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_za_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_zb_;
-    boost::intrusive_ptr<test::NetworkAgentMock> agent_zc_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_za_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_zb_;
+    boost::shared_ptr<test::NetworkAgentMock> agent_zc_;
 };
 
 class BgpXmppMcast3ServerTest : public BgpXmppMcast3ServerTestBase {
