@@ -8,6 +8,22 @@
 
 using namespace std;
 
+// BgpProtoPrefix format for erm-vpn prefix.
+//
+// +------------------------------------+
+// |      RD   (8 octets)               |
+// +------------------------------------+
+// |  Router-Id (4 octets)              |
+// +------------------------------------+
+// |  Multicast Source length (1 octet) |
+// +------------------------------------+
+// |  Multicast Source (4)              |
+// +------------------------------------+
+// |  Multicast Group length (1 octet)  |
+// +------------------------------------+
+// |  Multicast Group (4)               |
+// +------------------------------------+
+
 ErmVpnPrefix::ErmVpnPrefix() : type_(ErmVpnPrefix::Invalid) {
 }
 
@@ -23,21 +39,6 @@ ErmVpnPrefix::ErmVpnPrefix(uint8_t type, const RouteDistinguisher &rd,
       group_(group), source_(source) {
 }
 
-// Route Format
-//
-// +------------------------------------+
-// |      RD   (8 octets)               |
-// +------------------------------------+
-// |  Router-Id (4 octets)              |
-// +------------------------------------+
-// |  Multicast Source length (1 octet) |
-// +------------------------------------+
-// |  Multicast Source (4)              |
-// +------------------------------------+
-// |  Multicast Group length (1 octet)  |
-// +------------------------------------+
-// |  Multicast Group (4)               |
-// +------------------------------------+
 ErmVpnPrefix::ErmVpnPrefix(const BgpProtoPrefix &prefix) {
     assert(IsValidForBgp(prefix.type));
 
@@ -222,8 +223,8 @@ ErmVpnRoute::ErmVpnRoute(const ErmVpnPrefix &prefix) : prefix_(prefix) {
 int ErmVpnRoute::CompareTo(const Route &rhs) const {
     const ErmVpnRoute &other = static_cast<const ErmVpnRoute &>(rhs);
     KEY_COMPARE(prefix_.type(), other.prefix_.type());
-    KEY_COMPARE(prefix_.route_distinguisher(),
-                other.prefix_.route_distinguisher());
+    KEY_COMPARE(
+        prefix_.route_distinguisher(), other.prefix_.route_distinguisher());
     KEY_COMPARE(prefix_.router_id(), other.prefix_.router_id());
     KEY_COMPARE(prefix_.source(), other.prefix_.source());
     KEY_COMPARE(prefix_.group(), other.prefix_.group());
@@ -273,8 +274,8 @@ void ErmVpnRoute::BuildProtoPrefix(
     prefix_.BuildProtoPrefix(prefix);
 }
 
-void ErmVpnRoute::BuildBgpProtoNextHop(std::vector<uint8_t> &nh,
-                                         IpAddress nexthop) const {
+void ErmVpnRoute::BuildBgpProtoNextHop(
+    std::vector<uint8_t> &nh, IpAddress nexthop) const {
     nh.resize(4);
     const Ip4Address::bytes_type &addr_bytes = nexthop.to_v4().to_bytes();
     std::copy(addr_bytes.begin(), addr_bytes.end(), nh.begin());

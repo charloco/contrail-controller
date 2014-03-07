@@ -21,6 +21,8 @@ TEST_F(ErmVpnPrefixTest, BuildNativePrefix) {
     Ip4Address group(Ip4Address::from_string("224.1.2.3", ec));
     Ip4Address source(Ip4Address::from_string("192.168.1.1", ec));
     ErmVpnPrefix prefix(ErmVpnPrefix::NativeRoute, rd, group, source);
+    EXPECT_TRUE(prefix.IsValid(prefix.type()));
+    EXPECT_FALSE(prefix.IsValidForBgp(prefix.type()));
     EXPECT_EQ("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1", prefix.ToString());
     EXPECT_EQ("10.1.1.1:65535:224.1.2.3,192.168.1.1", prefix.ToXmppIdString());
     EXPECT_EQ(ErmVpnPrefix::NativeRoute, prefix.type());
@@ -33,6 +35,8 @@ TEST_F(ErmVpnPrefixTest, BuildNativePrefix) {
 TEST_F(ErmVpnPrefixTest, ParseNativePrefix) {
     string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    EXPECT_TRUE(prefix.IsValid(prefix.type()));
+    EXPECT_FALSE(prefix.IsValidForBgp(prefix.type()));
     EXPECT_EQ("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1", prefix.ToString());
     EXPECT_EQ("10.1.1.1:65535:224.1.2.3,192.168.1.1", prefix.ToXmppIdString());
     EXPECT_EQ(ErmVpnPrefix::NativeRoute, prefix.type());
@@ -49,6 +53,8 @@ TEST_F(ErmVpnPrefixTest, BuildLocalPrefix) {
     Ip4Address group(Ip4Address::from_string("224.1.2.3", ec));
     Ip4Address source(Ip4Address::from_string("192.168.1.1", ec));
     ErmVpnPrefix prefix(ErmVpnPrefix::LocalTreeRoute, rd, router_id, group, source);
+    EXPECT_TRUE(prefix.IsValid(prefix.type()));
+    EXPECT_TRUE(prefix.IsValidForBgp(prefix.type()));
     EXPECT_EQ("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", prefix.ToString());
     EXPECT_EQ(ErmVpnPrefix::LocalTreeRoute, prefix.type());
     EXPECT_EQ("10.1.1.1:65535", prefix.route_distinguisher().ToString());
@@ -60,6 +66,8 @@ TEST_F(ErmVpnPrefixTest, BuildLocalPrefix) {
 TEST_F(ErmVpnPrefixTest, ParseLocalPrefix) {
     string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    EXPECT_TRUE(prefix.IsValid(prefix.type()));
+    EXPECT_TRUE(prefix.IsValidForBgp(prefix.type()));
     EXPECT_EQ(ErmVpnPrefix::LocalTreeRoute, prefix.type());
     EXPECT_EQ("10.1.1.1:65535", prefix.route_distinguisher().ToString());
     EXPECT_EQ("9.8.7.6", prefix.router_id().to_string());
@@ -74,6 +82,8 @@ TEST_F(ErmVpnPrefixTest, BuildGlobalPrefix) {
     Ip4Address group(Ip4Address::from_string("224.1.2.3", ec));
     Ip4Address source(Ip4Address::from_string("192.168.1.1", ec));
     ErmVpnPrefix prefix(ErmVpnPrefix::GlobalTreeRoute, rd, router_id, group, source);
+    EXPECT_TRUE(prefix.IsValid(prefix.type()));
+    EXPECT_TRUE(prefix.IsValidForBgp(prefix.type()));
     EXPECT_EQ("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", prefix.ToString());
     EXPECT_EQ(ErmVpnPrefix::GlobalTreeRoute, prefix.type());
     EXPECT_EQ("10.1.1.1:65535", prefix.route_distinguisher().ToString());
@@ -85,6 +95,8 @@ TEST_F(ErmVpnPrefixTest, BuildGlobalPrefix) {
 TEST_F(ErmVpnPrefixTest, ParseGlobalPrefix) {
     string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    EXPECT_TRUE(prefix.IsValid(prefix.type()));
+    EXPECT_TRUE(prefix.IsValidForBgp(prefix.type()));
     EXPECT_EQ(ErmVpnPrefix::GlobalTreeRoute, prefix.type());
     EXPECT_EQ("10.1.1.1:65535", prefix.route_distinguisher().ToString());
     EXPECT_EQ("9.8.7.6", prefix.router_id().to_string());
@@ -180,6 +192,7 @@ TEST_F(ErmVpnRouteTest, NativeToString) {
     string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
+    EXPECT_EQ(prefix, route.GetPrefix());
     EXPECT_EQ("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1", route.ToString());
     EXPECT_EQ("10.1.1.1:65535:224.1.2.3,192.168.1.1", route.ToXmppIdString());
 }
@@ -188,6 +201,7 @@ TEST_F(ErmVpnRouteTest, LocalToString) {
     string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
+    EXPECT_EQ(prefix, route.GetPrefix());
     EXPECT_EQ("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
 }
 
@@ -208,6 +222,7 @@ TEST_F(ErmVpnRouteTest, GlobalToString) {
     string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
+    EXPECT_EQ(prefix, route.GetPrefix());
     EXPECT_EQ("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
 }
 
