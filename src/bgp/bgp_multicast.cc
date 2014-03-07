@@ -483,7 +483,7 @@ void McastSGEntry::AddLocalTreeRoute() {
     }
 
     // Build the attributes.
-    RoutingInstance *rt_instance = partition_->routing_instance();
+    const RoutingInstance *rt_instance = partition_->routing_instance();
     BgpAttrSpec attr_spec;
     BgpAttrNextHop nexthop(server->bgp_identifier());
     attr_spec.push_back(&nexthop);
