@@ -223,7 +223,7 @@ protected:
             CheckOListElem(agent.get(), net, prefix, olist_size, "", 0, ""));
     }
 
-    void VerifyOListElem(boost::shared_ptr<test::NetworkAgentMock> agent,
+    void VerifyOListElem(boost::shared_ptr<const test::NetworkAgentMock> agent,
             const string &net, const string &prefix,
             size_t olist_size, const string &address,
             boost::shared_ptr<test::NetworkAgentMock> other_agent,
