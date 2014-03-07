@@ -491,7 +491,7 @@ void McastSGEntry::AddLocalTreeRoute() {
     attr_spec.push_back(&source_rd);
     ExtCommunitySpec extcomm_spec;
     OriginVn origin_vn(server->autonomous_system(),
-        rt_instance->virtual_network_index());
+        rt_instance->virtual_network_index() + 10);
     extcomm_spec.communities.push_back(origin_vn.GetExtCommunityValue());
     attr_spec.push_back(&extcomm_spec);
     EdgeDiscoverySpec edspec;
