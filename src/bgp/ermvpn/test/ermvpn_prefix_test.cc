@@ -7,7 +7,7 @@
 #include "base/logging.h"
 #include "base/task.h"
 #include "bgp/bgp_log.h"
-#include "bgp/test/bgp_server_test_util.h"
+#include "bgp/bgp_server.h"
 #include "control-node/control_node.h"
 #include "testing/gunit.h"
 
@@ -188,13 +188,12 @@ TEST_F(ErmVpnPrefixTest, Error9) {
 
 class ErmVpnRouteTest : public ::testing::Test {
 protected:
-    virtual void SetUp() {
+    ErmVpnRouteTest() : server_(&evm_) {
         attr_db_ = server_.attr_db();
     }
-    virtual void TearDown() {
-    }
 
-    BgpServerTest server_;
+    EventManager evm_;
+    BgpServer server_;
     BgpAttrDB *attr_db_;
 };
 
