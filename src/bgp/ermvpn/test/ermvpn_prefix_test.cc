@@ -255,6 +255,47 @@ TEST_F(ErmVpnRouteTest, LocalToString) {
     EXPECT_EQ("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
 }
 
+TEST_F(ErmVpnRouteTest, LocalIsValid1) {
+    string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    route.MarkDelete();
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, LocalIsValid2) {
+    string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, LocalIsValid3) {
+    string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    BgpAttr *attr = new BgpAttr(attr_db_);
+    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
+    BgpPath *path(new BgpPath(NULL, 0, BgpPath::Local, attr_ptr, 0, 0));
+    route.InsertPath(path);
+    EXPECT_FALSE(route.IsValid());
+    route.DeletePath(path);
+}
+
+TEST_F(ErmVpnRouteTest, LocalIsValid4) {
+    string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EdgeDiscoverySpec edspec;
+    BgpAttr *attr = new BgpAttr(attr_db_);
+    attr->set_edge_discovery(&edspec);
+    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
+    BgpPath *path(new BgpPath(NULL, 0, BgpPath::Local, attr_ptr, 0, 0));
+    route.InsertPath(path);
+    EXPECT_TRUE(route.IsValid());
+    route.DeletePath(path);
+}
+
 TEST_F(ErmVpnRouteTest, LocalProtoPrefix) {
     string prefix_str("1-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix1(ErmVpnPrefix::FromString(prefix_str));
@@ -274,6 +315,47 @@ TEST_F(ErmVpnRouteTest, GlobalToString) {
     ErmVpnRoute route(prefix);
     EXPECT_EQ(prefix, route.GetPrefix());
     EXPECT_EQ("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1", route.ToString());
+}
+
+TEST_F(ErmVpnRouteTest, GlobalIsValid1) {
+    string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    route.MarkDelete();
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, GlobalIsValid2) {
+    string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EXPECT_FALSE(route.IsValid());
+}
+
+TEST_F(ErmVpnRouteTest, GlobalIsValid3) {
+    string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    BgpAttr *attr = new BgpAttr(attr_db_);
+    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
+    BgpPath *path(new BgpPath(NULL, 0, BgpPath::Local, attr_ptr, 0, 0));
+    route.InsertPath(path);
+    EXPECT_FALSE(route.IsValid());
+    route.DeletePath(path);
+}
+
+TEST_F(ErmVpnRouteTest, GlobalIsValid4) {
+    string prefix_str("2-10.1.1.1:65535-9.8.7.6,224.1.2.3,192.168.1.1");
+    ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
+    ErmVpnRoute route(prefix);
+    EdgeForwardingSpec efspec;
+    BgpAttr *attr = new BgpAttr(attr_db_);
+    attr->set_edge_forwarding(&efspec);
+    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
+    BgpPath *path(new BgpPath(NULL, 0, BgpPath::Local, attr_ptr, 0, 0));
+    route.InsertPath(path);
+    EXPECT_TRUE(route.IsValid());
+    route.DeletePath(path);
 }
 
 TEST_F(ErmVpnRouteTest, GlobalProtoPrefix) {
