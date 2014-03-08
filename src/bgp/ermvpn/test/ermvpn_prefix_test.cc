@@ -7,6 +7,7 @@
 #include "base/logging.h"
 #include "base/task.h"
 #include "bgp/bgp_log.h"
+#include "bgp/test/bgp_server_test_util.h"
 #include "control-node/control_node.h"
 #include "testing/gunit.h"
 
@@ -187,7 +188,14 @@ TEST_F(ErmVpnPrefixTest, Error9) {
 
 class ErmVpnRouteTest : public ::testing::Test {
 protected:
+    virtual void SetUp() {
+        attr_db_ = server_.attr_db();
+    }
+    virtual void TearDown() {
+    }
+
     BgpServerTest server_;
+    BgpAttrDB *attr_db_;
 };
 
 TEST_F(ErmVpnRouteTest, NativeToString) {
@@ -218,8 +226,8 @@ TEST_F(ErmVpnRouteTest, NativeIsValid3) {
     string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
-    BgpAttr *attr = new BgpAttr(&attr_db_);
-    BgpAttrPtr attr_ptr = server_.attr_db()->Locate(attr);
+    BgpAttr *attr = new BgpAttr(attr_db_);
+    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
     BgpPath path(NULL, 0, BgpPath::Local, attr_ptr, 0, 0);
     route.InsertPath(&path);
     EXPECT_FALSE(route.IsValid());
@@ -230,9 +238,9 @@ TEST_F(ErmVpnRouteTest, NativeIsValid4) {
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
     LabelBlockPtr label_block(new LabelBlock(1000, 1999));
-    BgpAttr *attr = new BgpAttr(&attr_db_);
+    BgpAttr *attr = new BgpAttr(attr_db_);
     attr->set_label_block(label_block);
-    BgpAttrPtr attr_ptr = server_.attr_db()->Locate(attr);
+    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
     BgpPath path(NULL, 0, BgpPath::Local, attr_ptr, 0, 0);
     route.InsertPath(&path);
     EXPECT_TRUE(route.IsValid());
