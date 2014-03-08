@@ -219,7 +219,7 @@ TEST_F(ErmVpnRouteTest, NativeIsValid3) {
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
     BgpAttr *attr = new BgpAttr(&attr_db_);
-    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
+    BgpAttrPtr attr_ptr = attr_db_.Locate(attr);
     BgpPath path(NULL, 0, BgpPath::Local, attr_ptr, 0, 0);
     route.InsertPath(&path);
     EXPECT_FALSE(route.IsValid());
@@ -232,7 +232,7 @@ TEST_F(ErmVpnRouteTest, NativeIsValid4) {
     LabelBlockPtr label_block(new LabelBlock(1000, 1999));
     BgpAttr *attr = new BgpAttr(&attr_db_);
     attr->set_label_block(label_block);
-    BgpAttrPtr attr_ptr = attr_db_->Locate(attr);
+    BgpAttrPtr attr_ptr = attr_db_.Locate(attr);
     BgpPath path(NULL, 0, BgpPath::Local, attr_ptr, 0, 0);
     route.InsertPath(&path);
     EXPECT_TRUE(route.IsValid());
