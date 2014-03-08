@@ -14,6 +14,7 @@
 #include "bgp/bgp_factory.h"
 #include "bgp/bgp_log.h"
 #include "bgp/bgp_multicast.h"
+#include "bgp/origin-vn/origin_vn.h"
 #include "bgp/test/bgp_server_test_util.h"
 #include "control-node/control_node.h"
 #include "io/event_manager.h"
@@ -51,9 +52,9 @@ protected:
         del_notification_ = 0;
 
         master_cfg_.reset(BgpTestUtil::CreateBgpInstanceConfig(
-            BgpConfigManager::kMasterInstance, "", ""));
+            BgpConfigManager::kMasterInstance));
         blue_cfg_.reset(BgpTestUtil::CreateBgpInstanceConfig(
-            "blue", "target:65412:1", "target:65412:1"));
+            "blue", "target:65412:1", "target:65412:1", "blue", 1));
 
         TaskScheduler *scheduler = TaskScheduler::GetInstance();
         scheduler->Stop();
@@ -88,14 +89,19 @@ protected:
         if (!rtarget_str.empty()) {
             RouteTarget rtarget = RouteTarget::FromString(rtarget_str);
             ext_comm.communities.push_back(rtarget.GetExtCommunityValue());
-            attrs.push_back(&ext_comm);
         }
+        OriginVn origin_vn(server_.autonomous_system(),
+            table->routing_instance()->virtual_network_index());
+        ext_comm.communities.push_back(origin_vn.GetExtCommunityValue());
+        attrs.push_back(&ext_comm);
+
         BgpAttrSourceRd source_rd;
         if (!source_rd_str.empty()) {
             source_rd = BgpAttrSourceRd(
                 RouteDistinguisher::FromString(source_rd_str));
             attrs.push_back(&source_rd);
         }
+
         BgpAttrPtr attr = server_.attr_db()->Locate(attrs);
 
         DBRequest addReq;
