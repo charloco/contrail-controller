@@ -216,8 +216,8 @@ TEST_F(ErmVpnRouteTest, NativeIsValid3) {
     string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
-    BgpAttrPtr attr(new BgpAttr);
-    BgpPath path(0, BgpPath::Local, attr, 0, 0);
+    BgpAttr attr;
+    BgpPath path(NULL, 0, BgpPath::Local, &attr, 0, 0);
     route.InsertPath(&path);
     EXPECT_FALSE(route.IsValid());
 }
@@ -226,10 +226,10 @@ TEST_F(ErmVpnRouteTest, NativeIsValid4) {
     string prefix_str("0-10.1.1.1:65535-0.0.0.0,224.1.2.3,192.168.1.1");
     ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
     ErmVpnRoute route(prefix);
-    BgpAttrPtr attr(new BgpAttr);
+    BgpAttr attr;
     LabelBlockPtr label_block(new LabelBlock(1000, 1999));
-    attr->set_label_block(label_block);
-    BgpPath path(0, BgpPath::Local, attr, 0, 0);
+    attr.set_label_block(label_block);
+    BgpPath path(NULL, 0, BgpPath::Local, &attr, 0, 0);
     route.InsertPath(&path);
     EXPECT_TRUE(route.IsValid());
 }
