@@ -77,8 +77,8 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
         if (!src_ermvpn_table->IsDefault())
             return NULL;
 
-        OriginVn origin_vn(
-            server->autonomous_system(), rtinstance_->virtual_network_index());
+        OriginVn origin_vn(server->autonomous_system(),
+            routing_instance()->virtual_network_index());
         if (!community->ContainsOriginVn(origin_vn.GetExtCommunity()))
             return NULL;
     }
