@@ -96,7 +96,7 @@ protected:
         if (virtual_network_index != -1) {
             vn_index = virtual_network_index;
         } else {
-            table->routing_instance()->virtual_network_index();
+            vn_index = table->routing_instance()->virtual_network_index();
         }
         OriginVn origin_vn(server_.autonomous_system(), vn_index);
 
