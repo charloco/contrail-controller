@@ -979,6 +979,62 @@ TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteFromVPN4) {
     TASK_UTIL_EXPECT_EQ(0, blue_->Size());
 }
 
+class ErmVpnNoLeakTest : public ErmVpnTableTest {
+    ErmVpnNoLeakTest() : ErmVpnTableTest(), pink_(NULL) {
+    }
+
+    virtual void SetUp() {
+        ErmVpnTableTest::SetUp();
+
+        ConcurrencyScope scope("bgp::Config");
+        pink_cfg_.reset(BgpTestUtil::CreateBgpInstanceConfig("pink",
+            "target:65412:1 target:65412:2", "target:65412:2", "pink", 2));
+
+        TaskScheduler *scheduler = TaskScheduler::GetInstance();
+        scheduler->Stop();
+        server_.routing_instance_mgr()->CreateRoutingInstance(pink_cfg_.get());
+        scheduler->Start();
+        task_util::WaitForIdle();
+
+        pink_ = static_cast<ErmVpnTable *>(
+            server_.database()->FindTable("pink.ermvpn.0"));
+        TASK_UTIL_EXPECT_EQ(Address::ERMVPN, pink_->family());
+    }
+
+    virtual void TearDown() {
+        ErmVpnTableTest::TearDown();
+    }
+
+    ErmVpnTable *pink_;
+    scoped_ptr<BgpInstanceConfig> pink_cfg_;
+};
+
+//
+// Blue VRF route doesn't get leaked to pink VRF even though pink has an
+// an import RT which is the same as the blue export RT.
+//
+TEST_F(ErmVpnNoLeakTest, AddDeleteSingleRoute) {
+    ostringstream repr;
+    repr << "1-10.1.1.1:65535-20.1.1.1,192.168.1.255,0.0.0.0";
+    AddRoute(blue_, repr.str());
+    task_util::WaitForIdle();
+    VerifyRouteExists(blue_, repr.str());
+    TASK_UTIL_EXPECT_EQ(adc_notification_, 1);
+    TASK_UTIL_EXPECT_EQ(1, blue_->Size());
+    TASK_UTIL_EXPECT_EQ(1, master_->Size());
+    VerifyRouteNoExists(pink_, repr.str());
+    TASK_UTIL_EXPECT_EQ(0, pink_->Size());
+
+    DelRoute(blue_, repr.str());
+    task_util::WaitForIdle();
+    TASK_UTIL_EXPECT_EQ(del_notification_, 1);
+    VerifyRouteNoExists(blue_, repr.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
+    TASK_UTIL_EXPECT_EQ(0, master_->Size());
+    VerifyRouteNoExists(pink_, repr.str());
+    TASK_UTIL_EXPECT_EQ(0, pink_->Size());
+}
+
 int main(int argc, char **argv) {
     bgp_log_test::init();
     ::testing::InitGoogleTest(&argc, argv);
