@@ -81,7 +81,8 @@ protected:
     }
 
     void AddRoute(ErmVpnTable *table, string prefix_str,
-            string rtarget_str = "", string source_rd_str = "") {
+            string rtarget_str = "", string source_rd_str = "",
+            int virtual_network_index = -1) {
         ErmVpnPrefix prefix(ErmVpnPrefix::FromString(prefix_str));
 
         BgpAttrSpec attrs;
@@ -90,10 +91,19 @@ protected:
             RouteTarget rtarget = RouteTarget::FromString(rtarget_str);
             ext_comm.communities.push_back(rtarget.GetExtCommunityValue());
         }
-        OriginVn origin_vn(server_.autonomous_system(),
-            table->routing_instance()->virtual_network_index());
-        ext_comm.communities.push_back(origin_vn.GetExtCommunityValue());
-        attrs.push_back(&ext_comm);
+
+        int vn_index;
+        if (virtual_network_index != -1) {
+            vn_index = virtual_network_index;
+        } else {
+            table->routing_instance()->virtual_network_index();
+        }
+        OriginVn origin_vn(server_.autonomous_system(), vn_index);
+
+        if (vn_index) {
+            ext_comm.communities.push_back(origin_vn.GetExtCommunityValue());
+            attrs.push_back(&ext_comm);
+        }
 
         BgpAttrSourceRd source_rd;
         if (!source_rd_str.empty()) {
@@ -566,6 +576,25 @@ TEST_F(ErmVpnLocalRouteTest, RouteReplicateFromVPN3) {
 
     TASK_UTIL_EXPECT_EQ(0, blue_->Size());
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
+}
+
+TEST_F(ErmVpnLocalRouteTest, ReplicateRouteFromVPN4) {
+    ostringstream repr1, repr2;
+    repr1 << "1-10.1.1.1:65535-20.1.1.1,192.168.1.255,0.0.0.0";
+    repr2 << "1-0:0-20.1.1.1,192.168.1.255,0.0.0.0";
+    AddRoute(master_, repr1.str(), "target:65412:1", "", 1001);
+    task_util::WaitForIdle();
+    VerifyRouteExists(master_, repr1.str());
+    TASK_UTIL_EXPECT_EQ(1, master_->Size());
+    VerifyRouteNoExists(blue_, repr2.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
+
+    DelRoute(master_, repr1.str());
+    task_util::WaitForIdle();
+    VerifyRouteNoExists(master_, repr1.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
+    VerifyRouteNoExists(blue_, repr2.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
 }
 
 class ErmVpnGlobalRouteTest : public ErmVpnTableTest {
