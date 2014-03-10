@@ -980,6 +980,7 @@ TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteFromVPN4) {
 }
 
 class ErmVpnNoLeakTest : public ErmVpnTableTest {
+protected:
     ErmVpnNoLeakTest() : ErmVpnTableTest(), pink_(NULL) {
     }
 
