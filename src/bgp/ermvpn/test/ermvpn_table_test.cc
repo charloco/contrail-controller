@@ -99,11 +99,10 @@ protected:
             vn_index = table->routing_instance()->virtual_network_index();
         }
         OriginVn origin_vn(server_.autonomous_system(), vn_index);
-
         if (vn_index) {
             ext_comm.communities.push_back(origin_vn.GetExtCommunityValue());
-            attrs.push_back(&ext_comm);
         }
+        attrs.push_back(&ext_comm);
 
         BgpAttrSourceRd source_rd;
         if (!source_rd_str.empty()) {
