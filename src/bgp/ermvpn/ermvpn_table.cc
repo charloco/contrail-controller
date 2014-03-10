@@ -74,20 +74,28 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
 
     ErmVpnRoute *mroute = dynamic_cast<ErmVpnRoute *>(src_rt);
     assert(mroute);
+
+    // Native routes are not replicated to other VRFs or to the VPN table.
     if (mroute->GetPrefix().type() == ErmVpnPrefix::NativeRoute)
         return NULL;
 
     if (!IsDefault()) {
+
+        // Don't replicate to a VRF from other VRF tables.
         ErmVpnTable *src_ermvpn_table = dynamic_cast<ErmVpnTable *>(src_table);
         if (!src_ermvpn_table->IsDefault())
             return NULL;
 
+        // Don't replicate to VRF from the VPN table if OriginVn doesn't match.
         OriginVn origin_vn(server->autonomous_system(),
             routing_instance()->virtual_network_index());
         if (!community->ContainsOriginVn(origin_vn.GetExtCommunity()))
             return NULL;
     }
 
+    // RD is always null in the VRF.  When replicating to the VPN table, we
+    // pick up the RD from the SourceRD attribute. The SourceRD is always set
+    // for Local and Global routes that the multicast code adds to a VRF.
     ErmVpnPrefix mprefix(mroute->GetPrefix());
     if (IsDefault()) {
         mprefix.set_route_distinguisher(src_path->GetAttr()->source_rd());
@@ -96,6 +104,7 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
     }
     ErmVpnRoute rt_key(mprefix);
 
+    // Find or create the route.
     DBTablePartition *rtp =
         static_cast<DBTablePartition *>(GetTablePartition(&rt_key));
     BgpRoute *dest_route = static_cast<BgpRoute *>(rtp->Find(&rt_key));
@@ -110,13 +119,12 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
         server->attr_db()->ReplaceExtCommunityAndLocate(src_path->GetAttr(),
                                                         community);
 
-    // Check whether peer already has a path
+    // Check whether peer already has a path.
     BgpPath *dest_path = dest_route->FindSecondaryPath(src_rt,
             src_path->GetSource(), src_path->GetPeer(),
             src_path->GetPathId());
     if (dest_path != NULL) {
         if (new_attr != dest_path->GetAttr()) {
-            // Update Attributes and notify (if needed)
             bool success = dest_route->RemoveSecondaryPath(src_rt,
                 src_path->GetSource(), src_path->GetPeer(),
                 src_path->GetPathId());
@@ -126,7 +134,7 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
         }
     }
 
-    // Create replicated path and insert it on the route
+    // Create replicated path and insert it on the route.
     BgpSecondaryPath *replicated_path =
         new BgpSecondaryPath(src_path->GetPeer(), src_path->GetPathId(),
                              src_path->GetSource(), new_attr,
@@ -134,7 +142,7 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
     replicated_path->SetReplicateInfo(src_table, src_rt);
     dest_route->InsertPath(replicated_path);
 
-    // Trigger notification only if the inserted path is selected
+    // Trigger notification only if the inserted path is selected.
     if (replicated_path == dest_route->front())
         rtp->Notify(dest_route);
 
@@ -177,6 +185,7 @@ bool ErmVpnTable::Export(RibOut *ribout, Route *route,
 }
 
 void ErmVpnTable::CreateTreeManager() {
+    // Don't create the McastTreeManager for the VPN table.
     if (IsDefault())
         return;
     assert(!tree_manager_);
@@ -185,6 +194,7 @@ void ErmVpnTable::CreateTreeManager() {
 }
 
 void ErmVpnTable::DestroyTreeManager() {
+    // There's no McastTreeManager for the VPN table.
     if (IsDefault())
         return;
     tree_manager_->Terminate();
