@@ -989,7 +989,7 @@ protected:
 
         ConcurrencyScope scope("bgp::Config");
         pink_cfg_.reset(BgpTestUtil::CreateBgpInstanceConfig("pink",
-            "target:65412:1 target:65412:2", "target:65412:2", "pink", 2));
+            "target:65412:2 target:65412:1", "target:65412:2", "pink", 2));
 
         TaskScheduler *scheduler = TaskScheduler::GetInstance();
         scheduler->Stop();
