@@ -201,7 +201,9 @@ TEST_F(ErmVpnNativeTest, AddDeleteSingleRoute) {
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
 }
 
+//
 // Prefixes differ only in the IP address field of the RD.
+//
 TEST_F(ErmVpnNativeTest, AddDeleteMultipleRoute1) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -232,7 +234,9 @@ TEST_F(ErmVpnNativeTest, AddDeleteMultipleRoute1) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the group field.
+//
 TEST_F(ErmVpnNativeTest, AddDeleteMultipleRoute2) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -263,7 +267,9 @@ TEST_F(ErmVpnNativeTest, AddDeleteMultipleRoute2) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the source field.
+//
 TEST_F(ErmVpnNativeTest, AddDeleteMultipleRoute3) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -341,7 +347,9 @@ TEST_F(ErmVpnLocalRouteTest, AddDeleteSingleRoute) {
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
 }
 
+//
 // Prefixes differ only in the IP address field of the RD.
+//
 TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute1) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -372,7 +380,9 @@ TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute1) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the group field.
+//
 TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute2) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -403,7 +413,9 @@ TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute2) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the source field.
+//
 TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute3) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -434,7 +446,9 @@ TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute3) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the router-id field.
+//
 TEST_F(ErmVpnLocalRouteTest, AddDeleteMultipleRoute4) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -487,6 +501,9 @@ TEST_F(ErmVpnLocalRouteTest, Hashing) {
     task_util::WaitForIdle();
 }
 
+//
+// Basic - RD in VRF is null.
+//
 TEST_F(ErmVpnLocalRouteTest, ReplicateRouteFromVPN1) {
     ostringstream repr1, repr2;
     repr1 << "1-10.1.1.1:65535-20.1.1.1,192.168.1.255,0.0.0.0";
@@ -506,6 +523,9 @@ TEST_F(ErmVpnLocalRouteTest, ReplicateRouteFromVPN1) {
     TASK_UTIL_EXPECT_EQ(0, blue_->Size());
 }
 
+//
+// Different RouterIds result in different routes in VRF.
+//
 TEST_F(ErmVpnLocalRouteTest, RouteReplicateFromVPN2) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr1;
@@ -542,6 +562,9 @@ TEST_F(ErmVpnLocalRouteTest, RouteReplicateFromVPN2) {
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
 }
 
+//
+// Different RDs result in different paths for same route in VRF.
+//
 TEST_F(ErmVpnLocalRouteTest, RouteReplicateFromVPN3) {
     ostringstream repr2;
     repr2 << "1-0:0-20.1.1.1,224.168.1.255,192.168.1.1";
@@ -577,6 +600,9 @@ TEST_F(ErmVpnLocalRouteTest, RouteReplicateFromVPN3) {
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
 }
 
+//
+// Incorrect OriginVn prevents replication to VRF, even if RT is fine.
+//
 TEST_F(ErmVpnLocalRouteTest, ReplicateRouteFromVPN4) {
     ostringstream repr1, repr2;
     repr1 << "1-10.1.1.1:65535-20.1.1.1,192.168.1.255,0.0.0.0";
@@ -617,7 +643,9 @@ TEST_F(ErmVpnGlobalRouteTest, AddDeleteSingleRoute) {
     VerifyRouteNoExists(blue_, repr.str());
 }
 
+//
 // Prefixes differ only in the IP address field of the RD.
+//
 TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute1) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -648,7 +676,9 @@ TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute1) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the group field.
+//
 TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute2) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -679,7 +709,9 @@ TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute2) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the source field.
+//
 TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute3) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -710,7 +742,9 @@ TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute3) {
     TASK_UTIL_EXPECT_EQ(del_notification_, kRouteCount);
 }
 
+//
 // Prefixes differ only in the router-id field.
+//
 TEST_F(ErmVpnGlobalRouteTest, AddDeleteMultipleRoute4) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr;
@@ -763,6 +797,9 @@ TEST_F(ErmVpnGlobalRouteTest, Hashing) {
     task_util::WaitForIdle();
 }
 
+//
+// Basic - RD of VPN route is set to provided source RD.
+//
 TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteToVPN1) {
     ostringstream repr1, repr2;
     repr1 << "2-0:0-20.1.1.1,192.168.1.255,0.0.0.0";
@@ -782,6 +819,9 @@ TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteToVPN1) {
     TASK_UTIL_EXPECT_EQ(0, blue_->Size());
 }
 
+//
+// Different RouterIds result in different VPN routes.
+//
 TEST_F(ErmVpnGlobalRouteTest, RouteReplicateToVPN2) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr1;
@@ -818,6 +858,9 @@ TEST_F(ErmVpnGlobalRouteTest, RouteReplicateToVPN2) {
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
 }
 
+//
+// Basic
+//
 TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteFromVPN1) {
     ostringstream repr1, repr2;
     repr1 << "2-10.1.1.1:65535-20.1.1.1,192.168.1.255,0.0.0.0";
@@ -837,6 +880,9 @@ TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteFromVPN1) {
     TASK_UTIL_EXPECT_EQ(0, blue_->Size());
 }
 
+//
+// Different RouterIds result in different routes in VRF.
+//
 TEST_F(ErmVpnGlobalRouteTest, RouteReplicateFromVPN2) {
     for (int idx = 1; idx <= kRouteCount; idx++) {
         ostringstream repr1;
@@ -873,6 +919,9 @@ TEST_F(ErmVpnGlobalRouteTest, RouteReplicateFromVPN2) {
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
 }
 
+//
+// Different RDs result in different paths for same route in VRF.
+//
 TEST_F(ErmVpnGlobalRouteTest, RouteReplicateFromVPN3) {
     ostringstream repr2;
     repr2 << "2-0:0-20.1.1.1,224.168.1.255,192.168.1.1";
@@ -906,6 +955,28 @@ TEST_F(ErmVpnGlobalRouteTest, RouteReplicateFromVPN3) {
 
     TASK_UTIL_EXPECT_EQ(0, blue_->Size());
     TASK_UTIL_EXPECT_EQ(0, master_->Size());
+}
+
+//
+// Incorrect OriginVn prevents replication to VRF, even if RT is fine.
+//
+TEST_F(ErmVpnGlobalRouteTest, ReplicateRouteFromVPN4) {
+    ostringstream repr1, repr2;
+    repr1 << "2-10.1.1.1:65535-20.1.1.1,192.168.1.255,0.0.0.0";
+    repr2 << "2-0:0-20.1.1.1,192.168.1.255,0.0.0.0";
+    AddRoute(master_, repr1.str(), "target:65412:1", "", 1001);
+    task_util::WaitForIdle();
+    VerifyRouteExists(master_, repr1.str());
+    TASK_UTIL_EXPECT_EQ(1, master_->Size());
+    VerifyRouteNoExists(blue_, repr2.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
+
+    DelRoute(master_, repr1.str());
+    task_util::WaitForIdle();
+    VerifyRouteNoExists(master_, repr1.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
+    VerifyRouteNoExists(blue_, repr2.str());
+    TASK_UTIL_EXPECT_EQ(0, blue_->Size());
 }
 
 int main(int argc, char **argv) {
