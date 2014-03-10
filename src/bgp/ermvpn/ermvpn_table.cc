@@ -72,6 +72,11 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
         ExtCommunityPtr community) {
     assert(src_table->family() == Address::ERMVPN);
 
+    ErmVpnRoute *mroute = dynamic_cast<ErmVpnRoute *>(src_rt);
+    assert(mroute);
+    if (mroute->GetPrefix().type() == ErmVpnPrefix::NativeRoute)
+        return NULL;
+
     if (!IsDefault()) {
         ErmVpnTable *src_ermvpn_table = dynamic_cast<ErmVpnTable *>(src_table);
         if (!src_ermvpn_table->IsDefault())
@@ -82,12 +87,6 @@ BgpRoute *ErmVpnTable::RouteReplicate(BgpServer *server,
         if (!community->ContainsOriginVn(origin_vn.GetExtCommunity()))
             return NULL;
     }
-
-    ErmVpnRoute *mroute = dynamic_cast<ErmVpnRoute *>(src_rt);
-    assert(mroute);
-
-    if (mroute->GetPrefix().type() == ErmVpnPrefix::NativeRoute)
-        return NULL;
 
     ErmVpnPrefix mprefix(mroute->GetPrefix());
     if (IsDefault()) {
