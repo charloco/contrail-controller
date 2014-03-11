@@ -8,7 +8,11 @@ Import('QueryEnv')
 
 env = QueryEnv.Clone()
 
-env.Append(LIBS=['libsandeshflow', 'gunit', 'hiredis', 'thrift', 'task_test'])
+env.Append(LIBS=['gunit', 'io', 'sandesh', 'http', 'sandeshvns', 'io', 'base',
+                 'http_parser', 'curl', 'boost_filesystem',
+                 'boost_program_options', 'pugixml', 'rt',
+                 'sandesh', 'sandeshvns',
+                 'libsandeshflow', 'hiredis', 'thrift', 'task_test'])
 env.Append(LIBPATH=['#/build/lib', Dir(env['TOP']).abspath + '/base/test/'])
 env.Append(CPPPATH = ['#/'+Dir('.').path ,
                       env['TOP'],
@@ -24,26 +28,33 @@ while env_noWerror_excep['CCFLAGS'].count('-fno-exceptions') > 0:
 
 RedisConn_obj = env.Object('redis_connection.o', '../../analytics/redis_connection.cc')
 
-query_test_obj = env_noWerror_excep.Object('query_test.o', 'query_test.cc');
+# query_test_obj = env_noWerror_excep.Object('query_test.o', 'query_test.cc');
 
-query_test = env.UnitTest('query_test',
-                              [ query_test_obj,
-                              RedisConn_obj,
-                              '../query.o',
-                              '../set_operation.o',
-                              '../where_query.o',
-                              '../db_query.o',
-                              '../select_fs_query.o',
-                              '../select.o',
-                              '../post_processing.o',
-                              '../QEOpServerProxy.o',
-                              "../qe_types.o",
-                              "../qe_constants.o",
-                              "../qe_html.o",
-                              '../../analytics/vizd_table_desc.o'
-                              ]
-                              )
+# query_test = env.UnitTest('query_test',
+#                              [ query_test_obj,
+#                              RedisConn_obj,
+#                              '../query.o',
+#                              '../set_operation.o',
+#                              '../where_query.o',
+#                              '../db_query.o',
+#                              '../select_fs_query.o',
+#                              '../select.o',
+#                              '../post_processing.o',
+#                              '../QEOpServerProxy.o',
+#                              "../qe_types.o",
+#                              "../qe_constants.o",
+#                              "../qe_html.o",
+#                              '../../analytics/vizd_table_desc.o'
+#                              ]
+#                              )
 
-test = env.TestSuite('query-test', [query_test])
-env.Alias('src/query_engine:query_test', query_test)
+options_test = env.UnitTest('options_test', ['../buildinfo.cc', '../options.cc',
+                                             'options_test.cc'])
+env.Alias('src/query_engine:options_test', options_test)
 
+test_suite = [options_test]
+
+test = env.TestSuite('query-test', test_suite)
+env.Alias('src/query_engine:query_test', test)
+
+Return('test_suite')

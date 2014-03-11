@@ -111,6 +111,7 @@ if sys.platform != 'darwin':
 qed_sources = [
     'QEOpServerProxy.cc',
     'qed.cc',
+    'options.cc',
 ]
 
 qed_except_sources = [
@@ -169,4 +170,4 @@ env.Depends(qedt, '#/build/include/hiredis/hiredis.h')
 QueryEnv = env.Clone()
 env.Default(qed)
 
-#test_suite = env.SConscript('test/SConscript', exports='QueryEnv', duplicate = 0)
+test_suite = env.SConscript('test/SConscript', exports='QueryEnv', duplicate = 0)
