@@ -525,8 +525,10 @@ void RoutingInstance::ProcessConfig(BgpServer *server) {
 
         RoutePathReplicator *evpn_replicator =
             server->replicator(Address::EVPN);
-        BOOST_FOREACH(RouteTarget rt, export_) {
+        BOOST_FOREACH(RouteTarget rt, import_) {
             evpn_replicator->Join(table_enet, rt, true);
+        }
+        BOOST_FOREACH(RouteTarget rt, export_) {
             evpn_replicator->Join(table_enet, rt, false);
         }
     }
@@ -597,6 +599,7 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
             add_import_rt.push_back(*cfg_it);
             inetvpn_replicator->Join(inet_table, cfg_rtarget, true);
             ermvpn_replicator->Join(ermvpn_table, cfg_rtarget, true);
+            evpn_replicator->Join(enet_table, cfg_rtarget, true);
             cfg_it++;
         } else if (cfg_rtarget.GetExtCommunity() > rt_it->GetExtCommunity()) {
             // If present not present config and but in Routing Instance,
@@ -606,6 +609,7 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
             remove_import_rt.push_back(rt_it->ToString());
             inetvpn_replicator->Leave(inet_table, *rt_it, true);
             ermvpn_replicator->Leave(ermvpn_table, *rt_it, true);
+            evpn_replicator->Leave(enet_table, *rt_it, true);
             import_.erase(rt_it);
             rt_it = rt_next_it;
         } else {
@@ -623,6 +627,7 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
         add_import_rt.push_back(*cfg_it);
         inetvpn_replicator->Join(inet_table, cfg_rtarget, true);
         ermvpn_replicator->Join(ermvpn_table, cfg_rtarget, true);
+        evpn_replicator->Join(enet_table, cfg_rtarget, true);
     }
 
     // Walk through the entire left over RoutingInstance import list and purge
@@ -631,6 +636,7 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
         remove_import_rt.push_back(rt_it->ToString());
         inetvpn_replicator->Leave(inet_table, *rt_it, true);
         ermvpn_replicator->Leave(ermvpn_table, *rt_it, true);
+        evpn_replicator->Leave(enet_table, *rt_it, true);
         import_.erase(rt_it);
     }
 
@@ -646,7 +652,6 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
             inetvpn_replicator->Join(inet_table, cfg_rtarget, false);
             ermvpn_replicator->Join(ermvpn_table, cfg_rtarget, false);
             evpn_replicator->Join(enet_table, cfg_rtarget, false);
-            evpn_replicator->Join(enet_table, cfg_rtarget, true);
             cfg_it++;
         } else if (cfg_rtarget.GetExtCommunity() > rt_it->GetExtCommunity()) {
             rt_next_it++;
@@ -654,7 +659,6 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
             inetvpn_replicator->Leave(inet_table, *rt_it, false);
             ermvpn_replicator->Leave(ermvpn_table, *rt_it, false);
             evpn_replicator->Leave(enet_table, *rt_it, false);
-            evpn_replicator->Leave(enet_table, *rt_it, true);
             export_.erase(rt_it);
             rt_it = rt_next_it;
         } else {
@@ -670,7 +674,6 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
         inetvpn_replicator->Join(inet_table, cfg_rtarget, false);
         ermvpn_replicator->Join(ermvpn_table, cfg_rtarget, false);
         evpn_replicator->Join(enet_table, cfg_rtarget, false);
-        evpn_replicator->Join(enet_table, cfg_rtarget, true);
     }
     for (rt_next_it = rt_it; rt_it != export_.end(); rt_it = rt_next_it) {
         rt_next_it++;
@@ -678,7 +681,6 @@ void RoutingInstance::UpdateConfig(BgpServer *server,
         inetvpn_replicator->Leave(inet_table, *rt_it, false);
         ermvpn_replicator->Leave(ermvpn_table, *rt_it, false);
         evpn_replicator->Leave(enet_table, *rt_it, false);
-        evpn_replicator->Leave(enet_table, *rt_it, true);
         export_.erase(rt_it);
     }
 
@@ -803,8 +805,10 @@ void RoutingInstance::ClearRouteTarget() {
     }
     RoutePathReplicator *evpn_replicator =
         server()->replicator(Address::EVPN);
-    BOOST_FOREACH(RouteTarget rt, export_) {
+    BOOST_FOREACH(RouteTarget rt, import_) {
         evpn_replicator->Leave(enet_table, rt, true);
+    }
+    BOOST_FOREACH(RouteTarget rt, export_) {
         evpn_replicator->Leave(enet_table, rt, false);
     }
 
