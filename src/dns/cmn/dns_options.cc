@@ -49,20 +49,19 @@ void Options::Initialize(EventManager &evm,
         ("version", "Display version information")
     ;
 
-    uint16_t default_collector_port = ContrailPorts::CollectorPort;
     uint16_t default_http_server_port = ContrailPorts::HttpPortDns;
     uint16_t default_discovery_port = ContrailPorts::DiscoveryServerPort;
+
+    vector<string> default_collector_server_list;
+    default_collector_server_list.push_back("127.0.0.1:8086");
 
     // Command line and config file options.
     opt::options_description config("Configuration options");
     config.add_options()
-        ("COLLECTOR.port", opt::value<uint16_t>()->default_value(
-                                                default_collector_port),
-             "Port of sandesh collector")
-        ("COLLECTOR.server",
-             opt::value<string>()->default_value(collector_server_),
-             "IP address of sandesh collector")
-
+        ("DEFAULT.collectors",
+           opt::value<vector<string> >()->default_value(
+               default_collector_server_list, "127.0.0.1:8086"),
+             "Collector server list")
         ("DEFAULT.dns_config_file",
              opt::value<string>()->default_value("dns_config.xml"),
              "DNS Configuration file")
@@ -161,8 +160,9 @@ void Options::Process(int argc, char *argv[],
 
     // Retrieve the options.
     GetOptValue<string>(var_map, dns_config_file_, "DEFAULT.dns_config_file");
-    GetOptValue<uint16_t>(var_map, collector_port_, "COLLECTOR.port");
-    GetOptValue<string>(var_map, collector_server_, "COLLECTOR.server");
+    GetOptValue< vector<string> >(var_map, collector_server_list_,
+                                  "DEFAULT.collectors");
+    collectors_configured_ = (var_map.count("DEFAULT.collectors") != 0);
 
     GetOptValue<string>(var_map, host_ip_, "DEFAULT.hostip");
     GetOptValue<string>(var_map, hostname_, "DEFAULT.hostname");
