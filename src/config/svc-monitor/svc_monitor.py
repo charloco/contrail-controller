@@ -847,6 +847,8 @@ class SvcMonitor(object):
         # end for result_type
     # end process_poll_result
 
+    def novaclient_clear(self):
+        self._nova={}
     def _novaclient_get(self, proj_name):
         client = self._nova.get(proj_name)
         if client is not None:
@@ -997,6 +999,8 @@ def launch_arc(monitor, ssrc_mapc):
             result = arc_mapc.call('poll', pollreq)
             monitor.process_poll_result(result)
         except Exception as e:
+            if monitor is not None:
+                monitor.novaclient_clear()
             if type(e) == socket.error:
                 time.sleep(3)
             else:
